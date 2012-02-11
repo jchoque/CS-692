@@ -1,4 +1,7 @@
 #include "BugAlgorithms.hpp"
+#include <iostream>
+
+using namespace std;
 
 BugAlgorithms::BugAlgorithms(Simulator * const simulator)
 {
@@ -38,26 +41,100 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 
 	if(!m_simulator->HasRobotReachedGoal())
 	{
-		double initX = m_simulator->GetRobotInitX();
-		double initY = m_simulator->GetRobotInitY();
-		
-		double goalX = m_simulator->GetGoalCenterX();
-		double goalY = m_simulator->GetGoalCenterY();
 
-		double deltaX = goalX-initX;
-		double deltaY = goalY-initY;
+		switch(m_mode)
+		{
+			case STRAIGHT:
+				if(sensor.m_dmin <=m_simulator->GetWhenToTurn())
+				{
+					m_mode = AROUND;
+					m_hit[0] = m_simulator->GetRobotCenterX();
+					m_hit[1] = m_simulator->GetRobotCenterY();
+					double dx = (sensor.m_xmin-m_simulator->GetRobotCenterX());
+					double dy = (sensor.m_ymin-m_simulator->GetRobotCenterY());
+					
+					double magnitude = sqrt((dx*dx)+(dy*dy));
+					dx/=magnitude;
+					dy/=magnitude;
+					dx*=m_simulator->GetStep();
+					dy*=m_simulator->GetStep();
+					move={-dy,dx};
 
-		double magnitude = sqrt( (deltaX*deltaX)+(deltaY*deltaY));
+				}
+				else
+				{
+					double initX = m_simulator->GetRobotInitX();
+					double initY = m_simulator->GetRobotInitY();
+					
+					double goalX = m_simulator->GetGoalCenterX();
+					double goalY = m_simulator->GetGoalCenterY();
+			
+					double deltaX = goalX-initX;
+					double deltaY = goalY-initY;
+			
+					double magnitude = sqrt( (deltaX*deltaX)+(deltaY*deltaY));
+			
+					deltaX /=magnitude;
+					deltaY /=magnitude;
+			
+					deltaX*=m_simulator->GetStep();
+					deltaY*=m_simulator->GetStep();
+			
+					move= {deltaX, deltaY};
+				}
+			break;
+			case AROUND: 
 
-		deltaX /=magnitude;
-		deltaY /=magnitude;
+					if(m_simulator->IsPointNearLine(
+						m_simulator->GetRobotCenterX(), 
+						m_simulator->GetRobotCenterY(), 
+						m_simulator->GetRobotInitX(), 
+						m_simulator->GetRobotInitY(), 
+						m_simulator->GetGoalCenterX(), 
+						m_simulator->GetGoalCenterY()))
+					{
+						m_mode = STRAIGHT;
+						m_leave[0] = m_simulator->GetRobotCenterX();
+						m_leave[1] = m_simulator->GetRobotCenterY();
+						double initX = m_simulator->GetRobotInitX();
+						double initY = m_simulator->GetRobotInitY();
+						
+						double goalX = m_simulator->GetGoalCenterX();
+						double goalY = m_simulator->GetGoalCenterY();
+				
+						double deltaX = goalX-initX;
+						double deltaY = goalY-initY;
+				
+						double magnitude = sqrt( (deltaX*deltaX)+(deltaY*deltaY));
+				
+						deltaX /=magnitude;
+						deltaY /=magnitude;
+				
+						deltaX*=m_simulator->GetStep();
+						deltaY*=m_simulator->GetStep();
+				
+						move= {deltaX, deltaY};
+					}
+					else
+					{
+						double dx = (sensor.m_xmin-m_simulator->GetRobotCenterX());
+						double dy = (sensor.m_ymin-m_simulator->GetRobotCenterY());
+					
+						double magnitude = sqrt((dx*dx)+(dy*dy));
+						dx/=magnitude;
+						dy/=magnitude;
+						dx*=m_simulator->GetStep();
+						dy*=m_simulator->GetStep();
+						move = {-dy,dx};
+					}
+			break;
 
-		deltaX*=m_simulator->GetStep();
-		deltaY*=m_simulator->GetStep();
 
-		move= {deltaX, deltaY};
+		}
+
 	}
 
+	cout<<"Current state: "<<m_mode<<", currentMove["<<move.m_dx<<", "<<move.m_dy<<"]"<<endl;
     return move;
 }
 

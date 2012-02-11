@@ -1,1 +1,1 @@
-/usr/bin/c++       CMakeFiles/RunBug.dir/src/Graphics.o CMakeFiles/RunBug.dir/src/BugAlgorithms.o CMakeFiles/RunBug.dir/src/Simulator.o  -o bin/RunBug -rdynamic -lGL -lGLU -lglut 
+/usr/bin/c++   -g    CMakeFiles/RunBug.dir/src/Graphics.o CMakeFiles/RunBug.dir/src/BugAlgorithms.o CMakeFiles/RunBug.dir/src/Simulator.o  -o bin/RunBug -rdynamic -lGL -lGLU -lglut 
