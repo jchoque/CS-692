@@ -33,8 +33,31 @@ Move BugAlgorithms::Bug1(Sensor sensor)
 Move BugAlgorithms::Bug2(Sensor sensor)
 {
 	Move move ={0,0};
-	//add your implementation
-    
+
+	//Generate the mLine
+
+	if(!m_simulator->HasRobotReachedGoal())
+	{
+		double initX = m_simulator->GetRobotInitX();
+		double initY = m_simulator->GetRobotInitY();
+		
+		double goalX = m_simulator->GetGoalCenterX();
+		double goalY = m_simulator->GetGoalCenterY();
+
+		double deltaX = goalX-initX;
+		double deltaY = goalY-initY;
+
+		double magnitude = sqrt( (deltaX*deltaX)+(deltaY*deltaY));
+
+		deltaX /=magnitude;
+		deltaY /=magnitude;
+
+		deltaX*=m_simulator->GetStep();
+		deltaY*=m_simulator->GetStep();
+
+		move= {deltaX, deltaY};
+	}
+
     return move;
 }
 
