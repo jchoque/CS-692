@@ -74,8 +74,9 @@ protected:
     double m_hit[2], m_leave[2], m_distLeaveToGoal;
     int    m_mode;
     long m_steps;
+	long m_stepsToLeave;
 	double m_hitAngle;
-
+	int m_bug1Turn;
     friend class Graphics;
 };
 
