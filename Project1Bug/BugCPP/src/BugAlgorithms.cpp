@@ -96,8 +96,11 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 						m_mode = STRAIGHT;
 						m_leave[0] = m_simulator->GetRobotCenterX();
 						m_leave[1] = m_simulator->GetRobotCenterY();
-						double initX = m_simulator->GetRobotInitX();
-						double initY = m_simulator->GetRobotInitY();
+						//double initX = m_simulator->GetRobotInitX();
+						//double initY = m_simulator->GetRobotInitY();
+
+						double initX = m_simulator->GetRobotCenterX();
+						double initY = m_simulator->GetRobotCenterY();
 						
 						double goalX = m_simulator->GetGoalCenterX();
 						double goalY = m_simulator->GetGoalCenterY();
