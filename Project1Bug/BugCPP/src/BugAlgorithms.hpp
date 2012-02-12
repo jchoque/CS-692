@@ -64,16 +64,17 @@ protected:
 
     enum Mode
 	{
-	    STRAIGHT,
-	    STRAIGHT_AND_AWAY_FROM_LEAVE_POINT,
-	    AROUND_AND_AWAY_FROM_HIT_POINT,
-	    AROUND_AND_TOWARD_LEAVE_POINT,
-	    AROUND
+	    STRAIGHT, // Heading towards goal
+	    STRAIGHT_AND_AWAY_FROM_LEAVE_POINT, // Found our best leave point and departing from obstacle
+	    AROUND_AND_AWAY_FROM_HIT_POINT, // Hit our obstacle and finding best leave point
+	    AROUND_AND_TOWARD_LEAVE_POINT, // Encircled obstacle and heading to stored leave point
+	    AROUND // Heading around obstacle
 	};
 
     double m_hit[2], m_leave[2], m_distLeaveToGoal;
     int    m_mode;
-    
+    long m_steps;
+	double m_hitAngle;
 
     friend class Graphics;
 };
