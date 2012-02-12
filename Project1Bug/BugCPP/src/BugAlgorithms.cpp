@@ -13,7 +13,6 @@ BugAlgorithms::BugAlgorithms(Simulator * const simulator)
     m_distLeaveToGoal = HUGE_VAL;  
 	m_steps = 0;
 	m_stepsToLeave = 0;
-	m_bug1Turn = 1;
 }
 
 BugAlgorithms::~BugAlgorithms(void)
@@ -149,7 +148,6 @@ Move BugAlgorithms::Bug1(Sensor sensor)
 			m_hit[1] = myY;
 			m_leave[0] = myX;
 			m_leave[1] = myY;
-			m_hitAngle = obstacleAngle;
 			m_mode = AROUND;
 			m_steps = 0;
 			m_stepsToLeave = 0;
@@ -198,7 +196,7 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 
 	if(!m_simulator->HasRobotReachedGoal())
 	{
-
+		
 		switch(m_mode)
 		{
 			case STRAIGHT:
@@ -244,7 +242,9 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 				}
 			break;
 			case AROUND: 
-
+				// Add check for whether our angle to the goal is the same as the angle from our init point to the goal.
+				// If not then check to see if the obstacle is in the way of our path to the goal.  If it is then continue
+				// going around the obstacle, if it isn't then head to the goal.
 					if(m_simulator->IsPointNearLine(
 						m_simulator->GetRobotCenterX(), 
 						m_simulator->GetRobotCenterY(), 
