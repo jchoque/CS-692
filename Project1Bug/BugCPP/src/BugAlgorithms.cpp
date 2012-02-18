@@ -38,11 +38,12 @@ Move BugAlgorithms::Bug0(Sensor sensor)
 	// Get the direction to the goal
 	double dirX = (goalX - myX) / distance;
 	double dirY = (goalY - myY) / distance;
+	double obstacleDistance = sqrt(pow(sensor.m_ymin - myY, 2) + pow(sensor.m_xmin - myX, 2));
 
 	// Compute tangent if we are hitting the obstacle
 	if (sensor.m_dmin <= m_simulator->GetWhenToTurn()){
 		// Calculate path to the obstacle
-		double obstacleDistance = sqrt(pow(sensor.m_ymin - myY, 2) + pow(sensor.m_xmin - myX, 2));
+		
 		double obstacleDirX = (sensor.m_xmin - myX) / obstacleDistance;
 		double obstacleDirY = (sensor.m_ymin - myY) / obstacleDistance * -1;
 		double obstacleAngle = (atan2(sensor.m_ymin - myY, sensor.m_xmin - myX) * 180 / 3.14159265);
@@ -70,8 +71,10 @@ Move BugAlgorithms::Bug0(Sensor sensor)
 		}
 	}
 
-	move.m_dx = dirX * m_simulator->GetStep();
-	move.m_dy = dirY * m_simulator->GetStep();
+	if (obstacleDistance >= (m_simulator->GetWhenToTurn() / 2)){
+		move.m_dx = dirX * m_simulator->GetStep();
+		move.m_dy = dirY * m_simulator->GetStep();
+	}
     
     return move;
 }
@@ -181,9 +184,10 @@ Move BugAlgorithms::Bug1(Sensor sensor)
 			m_stepsToLeave = 0;
 		}
 	}
-    
+
 	move.m_dx = dirX * m_simulator->GetStep();
 	move.m_dy = dirY * m_simulator->GetStep();
+	
 
     return move;
 }
@@ -296,6 +300,7 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 		}
 
 	}
+
 
 	cout<<"Current state: "<<m_mode<<", currentMove["<<move.m_dx<<", "<<move.m_dy<<"]"<<endl;
     return move;
