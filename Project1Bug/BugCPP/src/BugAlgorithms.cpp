@@ -249,13 +249,21 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 				// Add check for whether our angle to the goal is the same as the angle from our init point to the goal.
 				// If not then check to see if the obstacle is in the way of our path to the goal.  If it is then continue
 				// going around the obstacle, if it isn't then head to the goal.
+				double obstacleAngle = (atan2(sensor.m_ymin - m_simulator->GetRobotCenterY(), sensor.m_xmin - m_simulator->GetRobotCenterX()) * 180 / 3.14159265);
+				double goalAngle = (atan2(m_simulator->GetGoalCenterY() - m_simulator->GetRobotCenterY(), m_simulator->GetGoalCenterX() - m_simulator->GetRobotCenterX()) * 180 / 3.14159265);
+				int angleDiff = abs((int)(goalAngle - obstacleAngle) % 360);
+				
 					if(m_simulator->IsPointNearLine(
 						m_simulator->GetRobotCenterX(), 
 						m_simulator->GetRobotCenterY(), 
 						m_simulator->GetRobotInitX(), 
 						m_simulator->GetRobotInitY(), 
 						m_simulator->GetGoalCenterX(), 
-						m_simulator->GetGoalCenterY()))
+						m_simulator->GetGoalCenterY()) &&
+						angleDiff > 80 && // Only go toward goal if obstacle isn't in the way
+						!m_simulator->ArePointsNear(m_leave[0], m_leave[1], m_simulator->GetRobotCenterX(), m_simulator->GetRobotCenterY()) // Only go to obstacle
+						// if we didn't just leave from this leave point last time
+						)
 					{
 						m_mode = STRAIGHT;
 						m_leave[0] = m_simulator->GetRobotCenterX();
@@ -266,8 +274,8 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 						double goalX = m_simulator->GetGoalCenterX();
 						double goalY = m_simulator->GetGoalCenterY();
 				
-						double deltaX = goalX-initX;
-						double deltaY = goalY-initY;
+						double deltaX = goalX-m_simulator->GetRobotCenterX();
+						double deltaY = goalY-m_simulator->GetRobotCenterY();
 				
 						double magnitude = sqrt( (deltaX*deltaX)+(deltaY*deltaY));
 				
