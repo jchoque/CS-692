@@ -219,8 +219,8 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 				}
 				else
 				{
-					double initX = m_simulator->GetRobotInitX();
-					double initY = m_simulator->GetRobotInitY();
+					double initX = m_simulator->GetRobotCenterX();
+					double initY = m_simulator->GetRobotCenterY();
 					
 					double goalX = m_simulator->GetGoalCenterX();
 					double goalY = m_simulator->GetGoalCenterY();
@@ -242,9 +242,9 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 				}
 			break;
 			case AROUND: 
-				// Add check for whether our angle to the goal is the same as the angle from our init point to the goal.
-				// If not then check to see if the obstacle is in the way of our path to the goal.  If it is then continue
-				// going around the obstacle, if it isn't then head to the goal.
+	// Add check for whether our angle to the goal is the same as the angle from our init point to the goal.
+	// If not then check to see if the obstacle is in the way of our path to the goal.  If it is then continue
+	// going around the obstacle, if it isn't then head to the goal.
 					if(m_simulator->IsPointNearLine(
 						m_simulator->GetRobotCenterX(), 
 						m_simulator->GetRobotCenterY(), 
@@ -272,7 +272,7 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 				
 						deltaX*=m_simulator->GetStep();
 						deltaY*=m_simulator->GetStep();
-				
+						
 						move.m_dx = deltaX;
 						move.m_dy = deltaY;
 					}
