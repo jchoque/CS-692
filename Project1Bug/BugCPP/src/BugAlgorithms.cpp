@@ -223,8 +223,8 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 				}
 				else
 				{
-					double initX = m_simulator->GetRobotInitX();
-					double initY = m_simulator->GetRobotInitY();
+					double initX = m_simulator->GetRobotCenterX();
+					double initY = m_simulator->GetRobotCenterY();
 					
 					double goalX = m_simulator->GetGoalCenterX();
 					double goalY = m_simulator->GetGoalCenterY();

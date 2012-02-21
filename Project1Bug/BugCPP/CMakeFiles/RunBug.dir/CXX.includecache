@@ -18,22 +18,6 @@ math.h
 Simulator.hpp
 /home/lordoku/school/CS692/Project1Bug/BugCPP/src/Simulator.hpp
 
-/home/lordoku/school/CS692/Project1Bug/BugCPP/src/Graphics.cpp
-Graphics.hpp
-/home/lordoku/school/CS692/Project1Bug/BugCPP/src/Graphics.hpp
-GLUT/glut.h
--
-glutForWindows.h
-/home/lordoku/school/CS692/Project1Bug/BugCPP/src/glutForWindows.h
-GL/glut.h
--
-
-/home/lordoku/school/CS692/Project1Bug/BugCPP/src/Graphics.hpp
-BugAlgorithms.hpp
-/home/lordoku/school/CS692/Project1Bug/BugCPP/src/BugAlgorithms.hpp
-Simulator.hpp
-/home/lordoku/school/CS692/Project1Bug/BugCPP/src/Simulator.hpp
-
 /home/lordoku/school/CS692/Project1Bug/BugCPP/src/Simulator.hpp
 cmath
 -
@@ -42,13 +26,5 @@ cstdio
 cstdlib
 -
 vector
--
-
-/home/lordoku/school/CS692/Project1Bug/BugCPP/src/glutForWindows.h
-windows.h
--
-GL/gl.h
--
-GL/glu.h
 -
 
