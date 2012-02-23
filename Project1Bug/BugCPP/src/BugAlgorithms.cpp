@@ -117,7 +117,7 @@ Move BugAlgorithms::Bug1(Sensor sensor)
 		case AROUND_AND_AWAY_FROM_HIT_POINT:
 			// Make sure we are near the hit point and our angle is far enough different
 			if (m_simulator->ArePointsNear(myX, myY, m_hit[0], m_hit[1]) && m_steps > 20){ 
-				cout << m_steps << " " << m_stepsToLeave << " " << (double)m_stepsToLeave / m_steps << endl;
+			//	cout << m_steps << " " << m_stepsToLeave << " " << (double)m_stepsToLeave / m_steps << endl;
 				m_mode = AROUND_AND_TOWARD_LEAVE_POINT;
 				dirX = obstacleDirY;
 				dirY = obstacleDirX; 
@@ -310,7 +310,7 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 	}
 
 
-	cout<<"Current state: "<<m_mode<<", currentMove["<<move.m_dx<<", "<<move.m_dy<<"]"<<endl;
+//	cout <<"Current state: "<<m_mode<<", currentMove["<<move.m_dx<<", "<<move.m_dy<<"]"<<endl;
     return move;
 }
 
