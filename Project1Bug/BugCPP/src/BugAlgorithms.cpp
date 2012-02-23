@@ -41,7 +41,7 @@ Move BugAlgorithms::Bug0(Sensor sensor)
 
 	// Debug calculation
 	double goalSlope = (goalY - myY) / (goalX - myX);
-	double goalAngle = (atan2(goalY - myY, goalX - myX) * 180 / 3.14159265);
+	double goalAngle = abs((atan2(goalY - myY, goalX - myX) * 180 / 3.14159265));
 	double distance = sqrt(pow(goalX - myX,2) + pow(goalY - myY, 2));
 
 	// Get the direction to the goal
@@ -51,14 +51,12 @@ Move BugAlgorithms::Bug0(Sensor sensor)
 
 	// Compute tangent if we are hitting the obstacle
 	if (sensor.m_dmin <= m_simulator->GetWhenToTurn()){
-		// Calculate path to the obstacle
-
-		
+		// Calculate path to the obstacle		
 		double obstacleDirX = (sensor.m_xmin - myX) / obstacleDistance;
 		double obstacleDirY = (sensor.m_ymin - myY) / obstacleDistance * -1;
-		double obstacleAngle = (atan2(sensor.m_ymin - myY, sensor.m_xmin - myX) * 180 / 3.14159265);
+		double obstacleAngle = abs(atan2(sensor.m_ymin - myY, sensor.m_xmin - myX) * 180 / 3.14159265);
 
-		double angleDiff = (int)(goalAngle - obstacleAngle) % 360;
+		double angleDiff = abs((int)(goalAngle - obstacleAngle) % 360);
 
 		// Don't break away and go to the obstacle if the the angle is too close
 		if ( abs(angleDiff) <= 90 ){
