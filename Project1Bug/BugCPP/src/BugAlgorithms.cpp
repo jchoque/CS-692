@@ -28,6 +28,7 @@ BugAlgorithms::~BugAlgorithms(void)
     //do not delete m_simulator  
 }
 
+//Possible modes: STRAIGHT, AROUND
 Move BugAlgorithms::Bug0(Sensor sensor)
 {
 	Move move ={0,0};
@@ -51,6 +52,7 @@ Move BugAlgorithms::Bug0(Sensor sensor)
 	// Compute tangent if we are hitting the obstacle
 	if (sensor.m_dmin <= m_simulator->GetWhenToTurn()){
 		// Calculate path to the obstacle
+
 		
 		double obstacleDirX = (sensor.m_xmin - myX) / obstacleDistance;
 		double obstacleDirY = (sensor.m_ymin - myY) / obstacleDistance * -1;
@@ -62,6 +64,12 @@ Move BugAlgorithms::Bug0(Sensor sensor)
 		if ( abs(angleDiff) <= 90 ){
 			dirX = obstacleDirY;
 			dirY =  obstacleDirX;
+			if(m_mode == STRAIGHT)
+			{
+				m_hit[0] = m_simulator->GetRobotCenterX();
+				m_hit[1] = m_simulator->GetRobotCenterY();
+				m_mode = AROUND;
+			}
 		} 
 		// The difference between the angle to the goal and obstacle is more than 90
 		// so lets try going to the obstacle, but first take a step away from the obstacle
@@ -80,6 +88,13 @@ Move BugAlgorithms::Bug0(Sensor sensor)
 	}
 
 	if (obstacleDistance >= (m_simulator->GetWhenToTurn() / 2)){
+
+		if(m_mode == AROUND)
+		{
+			m_leave[0] = m_simulator->GetRobotCenterX();
+			m_leave[1] = m_simulator->GetRobotCenterY();
+			m_mode = STRAIGHT;
+		}
 		move.m_dx = dirX * m_simulator->GetStep();
 		move.m_dy = dirY * m_simulator->GetStep();
 	}
