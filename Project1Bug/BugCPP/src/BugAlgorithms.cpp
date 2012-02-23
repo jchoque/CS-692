@@ -1,3 +1,11 @@
+/*
+ * CS 689
+ * Brian Nolan
+ * Chris O'Connell
+ * Homework 1
+ *
+ */
+
 #include "BugAlgorithms.hpp"
 #include <iostream>
 #include <math.h>
