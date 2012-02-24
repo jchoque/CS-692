@@ -1,0 +1,101 @@
+!SESSION 2012-02-23 23:23:00.278 -----------------------------------------------
+eclipse.buildId=M20110909-1335
+java.version=1.6.0_26
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=linux, ARCH=x86, WS=gtk, NL=en_US
+Framework arguments:  -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini
+Command-line arguments:  -os linux -ws gtk -arch x86 -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -data /home/lordoku/school/CS692/Project1Bug
+
+!ENTRY org.eclipse.equinox.p2.operations 2 0 2012-02-23 23:25:02.084
+!MESSAGE Operation details
+!SUBENTRY 1 org.eclipse.equinox.p2.operations 2 10001 2012-02-23 23:25:02.084
+!MESSAGE Your original request has been modified.
+!SUBENTRY 2 org.eclipse.equinox.p2.operations 2 10005 2012-02-23 23:25:02.084
+!MESSAGE "C/C++ Development Tools" will be ignored because it is already installed.
+
+!ENTRY org.eclipse.equinox.p2.operations 2 0 2012-02-23 23:25:02.093
+!MESSAGE Operation details
+!SUBENTRY 1 org.eclipse.equinox.p2.operations 2 10001 2012-02-23 23:25:02.093
+!MESSAGE Your original request has been modified.
+!SUBENTRY 2 org.eclipse.equinox.p2.operations 2 10005 2012-02-23 23:25:02.093
+!MESSAGE "C/C++ Development Tools" will be ignored because it is already installed.
+
+!ENTRY org.eclipse.ui 4 4 2012-02-23 23:26:10.232
+!MESSAGE Invalid preference page path: XML Syntax
+!SESSION 2012-02-23 23:26:11.586 -----------------------------------------------
+eclipse.buildId=M20110909-1335
+java.version=1.6.0_26
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=linux, ARCH=x86, WS=gtk, NL=en_US
+Framework arguments:  -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini
+Command-line arguments:  -os linux -ws gtk -arch x86 -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -data /home/lordoku/school/CS692/Project1Bug
+
+!ENTRY org.eclipse.ui.workbench 2 0 2012-02-23 23:27:09.265
+!MESSAGE A handler conflict occurred.  This may disable some commands.
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2012-02-23 23:27:09.265
+!MESSAGE Conflict for 'org.eclipse.ltk.ui.refactor.create.refactoring.script':
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.create.refactoring.script,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.ltk.ui.refactoring.actions.CreateRefactoringScriptAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.cdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@13136e5),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@13136e5)),sourcePriority=16640)
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.create.refactoring.script,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.jdt.internal.ui.refactoring.actions.CreateRefactoringScriptAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.jdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@13136e5),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@13136e5)),sourcePriority=16640)
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2012-02-23 23:27:09.265
+!MESSAGE Conflict for 'org.eclipse.ltk.ui.refactor.show.refactoring.history':
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.show.refactoring.history,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.jdt.internal.ui.refactoring.actions.ShowRefactoringHistoryAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.jdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@13136e5),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@13136e5)),sourcePriority=16640)
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.show.refactoring.history,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.ltk.ui.refactoring.actions.ShowRefactoringHistoryAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.cdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@13136e5),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@13136e5)),sourcePriority=16640)
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2012-02-23 23:27:09.265
+!MESSAGE Conflict for 'org.eclipse.ltk.ui.refactor.apply.refactoring.script':
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.apply.refactoring.script,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.jdt.internal.ui.refactoring.actions.ApplyRefactoringScriptAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.jdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@13136e5),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@13136e5)),sourcePriority=16640)
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.apply.refactoring.script,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.ltk.ui.refactoring.actions.ApplyRefactoringScriptAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.cdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@13136e5),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@13136e5)),sourcePriority=16640)
+
+!ENTRY org.eclipse.cdt.core 1 0 2012-02-23 23:27:10.950
+!MESSAGE Indexed 'BugCPP' (7 sources, 202 headers) in 11.34 sec: 23,722 declarations; 37,014 references; 0 unresolved inclusions; 7 syntax errors; 84 unresolved names (0.14%)
+
+!ENTRY org.eclipse.ui 4 4 2012-02-23 23:27:11.000
+!MESSAGE Invalid preference page path: XML Syntax
+!SESSION 2012-02-23 23:32:05.455 -----------------------------------------------
+eclipse.buildId=M20110909-1335
+java.version=1.6.0_26
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=linux, ARCH=x86, WS=gtk, NL=en_US
+Framework arguments:  -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini
+Command-line arguments:  -os linux -ws gtk -arch x86 -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -pluginCustomization /opt/NVPACK/eclipse/nvpref.ini -data /home/lordoku/school/CS692/Project1Bug
+
+!ENTRY org.eclipse.ui.workbench 2 0 2012-02-23 23:32:24.445
+!MESSAGE A handler conflict occurred.  This may disable some commands.
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2012-02-23 23:32:24.445
+!MESSAGE Conflict for 'org.eclipse.ltk.ui.refactor.create.refactoring.script':
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.create.refactoring.script,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.ltk.ui.refactoring.actions.CreateRefactoringScriptAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.cdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@15b4ad2),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@15b4ad2)),sourcePriority=16640)
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.create.refactoring.script,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.jdt.internal.ui.refactoring.actions.CreateRefactoringScriptAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.jdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@15b4ad2),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@15b4ad2)),sourcePriority=16640)
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2012-02-23 23:32:24.445
+!MESSAGE Conflict for 'org.eclipse.ltk.ui.refactor.show.refactoring.history':
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.show.refactoring.history,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.jdt.internal.ui.refactoring.actions.ShowRefactoringHistoryAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.jdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@15b4ad2),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@15b4ad2)),sourcePriority=16640)
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.show.refactoring.history,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.ltk.ui.refactoring.actions.ShowRefactoringHistoryAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.cdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@15b4ad2),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@15b4ad2)),sourcePriority=16640)
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2012-02-23 23:32:24.445
+!MESSAGE Conflict for 'org.eclipse.ltk.ui.refactor.apply.refactoring.script':
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.apply.refactoring.script,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.jdt.internal.ui.refactoring.actions.ApplyRefactoringScriptAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.jdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@15b4ad2),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@15b4ad2)),sourcePriority=16640)
+HandlerActivation(commandId=org.eclipse.ltk.ui.refactor.apply.refactoring.script,
+	handler=ActionDelegateHandlerProxy(null,org.eclipse.ltk.ui.refactoring.actions.ApplyRefactoringScriptAction),
+	expression=AndExpression(ActionSetExpression(org.eclipse.cdt.ui.CodingActionSet,org.eclipse.ui.internal.WorkbenchWindow@15b4ad2),WorkbenchWindowExpression(org.eclipse.ui.internal.WorkbenchWindow@15b4ad2)),sourcePriority=16640)
+
+!ENTRY org.eclipse.ui 4 4 2012-02-23 23:32:26.926
+!MESSAGE Invalid preference page path: XML Syntax

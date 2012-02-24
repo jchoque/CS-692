@@ -14,18 +14,18 @@ using namespace std;
 
 BugAlgorithms::BugAlgorithms(Simulator * const simulator)
 {
-    m_simulator = simulator;   
-    m_mode = STRAIGHT;
-    m_hit[0] = m_hit[1] = HUGE_VAL;
-    m_leave[0] = m_leave[1] = 0;
-    m_distLeaveToGoal = HUGE_VAL;  
+	m_simulator = simulator;
+	m_mode = STRAIGHT;
+	m_hit[0] = m_hit[1] = HUGE_VAL;
+	m_leave[0] = m_leave[1] = 0;
+	m_distLeaveToGoal = HUGE_VAL;
 	m_steps = 0;
 	m_stepsToLeave = 0;
 }
 
 BugAlgorithms::~BugAlgorithms(void)
 {
-    //do not delete m_simulator  
+	//do not delete m_simulator
 }
 
 //Possible modes: STRAIGHT, AROUND
@@ -96,14 +96,14 @@ Move BugAlgorithms::Bug0(Sensor sensor)
 		move.m_dx = dirX * m_simulator->GetStep();
 		move.m_dy = dirY * m_simulator->GetStep();
 	}
-    
-    return move;
+
+	return move;
 }
 
 Move BugAlgorithms::Bug1(Sensor sensor)
 {
 	Move move ={0,0};
-	
+
 	// Determine my location and goal location
 	double goalX = m_simulator->GetGoalCenterX();
 	double goalY = m_simulator->GetGoalCenterY();
@@ -126,37 +126,37 @@ Move BugAlgorithms::Bug1(Sensor sensor)
 	dirX = dirX / distance;
 	dirY = dirY / distance;
 	switch (m_mode) {
-		case AROUND:
+	case AROUND:
+		dirX = obstacleDirY;
+		dirY = obstacleDirX;
+		m_mode = AROUND_AND_AWAY_FROM_HIT_POINT;
+		dirX = obstacleDirY;
+		m_steps++;
+
+		break;
+
+	case AROUND_AND_AWAY_FROM_HIT_POINT:
+		// Make sure we are near the hit point and our angle is far enough different
+		if (m_simulator->ArePointsNear(myX, myY, m_hit[0], m_hit[1]) && m_steps > 20){
+			//	cout << m_steps << " " << m_stepsToLeave << " " << (double)m_stepsToLeave / m_steps << endl;
+			m_mode = AROUND_AND_TOWARD_LEAVE_POINT;
 			dirX = obstacleDirY;
 			dirY = obstacleDirX; 
-			m_mode = AROUND_AND_AWAY_FROM_HIT_POINT;
-			dirX = obstacleDirY;
 			m_steps++;
-		
+		}
 		break;
 
-		case AROUND_AND_AWAY_FROM_HIT_POINT:
-			// Make sure we are near the hit point and our angle is far enough different
-			if (m_simulator->ArePointsNear(myX, myY, m_hit[0], m_hit[1]) && m_steps > 20){ 
-			//	cout << m_steps << " " << m_stepsToLeave << " " << (double)m_stepsToLeave / m_steps << endl;
-				m_mode = AROUND_AND_TOWARD_LEAVE_POINT;
-				dirX = obstacleDirY;
-				dirY = obstacleDirX; 
-				m_steps++;
-			}
+	case AROUND_AND_TOWARD_LEAVE_POINT:
+		if (m_simulator->ArePointsNear(myX, myY, m_leave[0], m_leave[1])){
+			m_mode = STRAIGHT_AND_AWAY_FROM_LEAVE_POINT;
+
+			dirX = obstacleDirY;
+			dirY = obstacleDirX;
+
+		}
 		break;
 
-		case AROUND_AND_TOWARD_LEAVE_POINT:
-			if (m_simulator->ArePointsNear(myX, myY, m_leave[0], m_leave[1])){
-				m_mode = STRAIGHT_AND_AWAY_FROM_LEAVE_POINT;
-				
-				dirX = obstacleDirY;
-				dirY = obstacleDirX;
-				
-			} 
-		break;
-
-		default:
+	default:
 
 		break;
 
@@ -164,7 +164,7 @@ Move BugAlgorithms::Bug1(Sensor sensor)
 
 	// Compute tangent if necessary
 	if ((sensor.m_dmin <= m_simulator->GetWhenToTurn() && m_mode != STRAIGHT_AND_AWAY_FROM_LEAVE_POINT) ||
-		m_mode == AROUND_AND_TOWARD_LEAVE_POINT || m_mode == AROUND_AND_AWAY_FROM_HIT_POINT){
+			m_mode == AROUND_AND_TOWARD_LEAVE_POINT || m_mode == AROUND_AND_AWAY_FROM_HIT_POINT){
 		m_steps++;
 		if (m_mode == STRAIGHT && m_hit[0] != m_leave[0] && m_hit[1] != m_leave[1]){
 			m_distLeaveToGoal = distance;
@@ -177,26 +177,26 @@ Move BugAlgorithms::Bug1(Sensor sensor)
 			m_stepsToLeave = 0;
 		}
 		if (m_mode != AROUND_AND_TOWARD_LEAVE_POINT
-			&& m_distLeaveToGoal > distance){
+				&& m_distLeaveToGoal > distance){
 			m_distLeaveToGoal = distance;
 			m_leave[0] = myX;
 			m_leave[1] = myY;
 			m_stepsToLeave = m_steps;
 		} else if (m_mode == AROUND_AND_TOWARD_LEAVE_POINT){
 			m_steps--;
-			
+
 			if (((double)m_stepsToLeave / m_steps) < 0.5){
-					dirX = obstacleDirY;
-					dirY = obstacleDirX;
-				} else {
-					dirX = obstacleDirY * -1;
-					dirY = obstacleDirX * -1;
-				}
+				dirX = obstacleDirY;
+				dirY = obstacleDirX;
+			} else {
+				dirX = obstacleDirY * -1;
+				dirY = obstacleDirX * -1;
 			}
+		}
 
 		if (m_mode != AROUND_AND_TOWARD_LEAVE_POINT){
 			dirX = obstacleDirY;
-			dirY = obstacleDirX; 
+			dirY = obstacleDirX;
 		}
 	} else {
 		if (m_mode == STRAIGHT_AND_AWAY_FROM_LEAVE_POINT){
@@ -208,121 +208,129 @@ Move BugAlgorithms::Bug1(Sensor sensor)
 
 	move.m_dx = dirX * m_simulator->GetStep();
 	move.m_dy = dirY * m_simulator->GetStep();
-	
 
-    return move;
+
+	return move;
 }
 
 Move BugAlgorithms::Bug2(Sensor sensor)
 {
-    Move move ={0,0};
+	Move move ={0,0};
+	double robotX = m_simulator->GetRobotCenterX();
+	double robotY = m_simulator->GetRobotCenterY();
+	double robotInitX = m_simulator->GetRobotInitX();
+	double robotInitY = m_simulator->GetRobotInitY();
+	double goalCenterX = m_simulator->GetGoalCenterX();
+	double goalCenterY = m_simulator->GetGoalCenterY();
 
 	//Generate the mLine
 
 	if(!m_simulator->HasRobotReachedGoal())
 	{
-		
+
 		switch(m_mode)
 		{
-			case STRAIGHT:
-				if(sensor.m_dmin <=m_simulator->GetWhenToTurn())
-				{
-					m_mode = AROUND;
-					m_hit[0] = m_simulator->GetRobotCenterX();
-					m_hit[1] = m_simulator->GetRobotCenterY();
-					double dx = (sensor.m_xmin-m_simulator->GetRobotCenterX());
-					double dy = (sensor.m_ymin-m_simulator->GetRobotCenterY());
-					
-					double magnitude = sqrt((dx*dx)+(dy*dy));
-					dx/=magnitude;
-					dy/=magnitude;
-					dx*=m_simulator->GetStep();
-					dy*=m_simulator->GetStep();
-					move.m_dx = -dy;
-					move.m_dy = dx;
+		case STRAIGHT:
+			if(sensor.m_dmin <=m_simulator->GetWhenToTurn())
+			{
+				m_mode = AROUND;
+				m_hit[0] = robotX;
+				m_hit[1] = robotY;
+				double dx = (sensor.m_xmin-robotX);
+				double dy = (sensor.m_ymin-robotY);
 
-				}
-				else
-				{
-					double initX = m_simulator->GetRobotCenterX();
-					double initY = m_simulator->GetRobotCenterY();
-					
-					double goalX = m_simulator->GetGoalCenterX();
-					double goalY = m_simulator->GetGoalCenterY();
-			
-					double deltaX = goalX-initX;
-					double deltaY = goalY-initY;
-			
-					double magnitude = sqrt( (deltaX*deltaX)+(deltaY*deltaY));
-			
-					deltaX /=magnitude;
-					deltaY /=magnitude;
-			
-					deltaX*=m_simulator->GetStep();
-					deltaY*=m_simulator->GetStep();
-			
-					move.m_dx = deltaX;
-					move.m_dy = deltaY;
+				double magnitude = sqrt((dx*dx)+(dy*dy));
+				dx/=magnitude;
+				dy/=magnitude;
+				dx*=m_simulator->GetStep();
+				dy*=m_simulator->GetStep();
+				move.m_dx = -dy;
+				move.m_dy = dx;
 
-				}
+			}
+			else
+			{
+				double initX = robotX;
+				double initY = robotY;
+
+				double goalX = goalCenterX;
+				double goalY = goalCenterY;
+
+				double deltaX = goalX-initX;
+				double deltaY = goalY-initY;
+
+				double magnitude = sqrt( (deltaX*deltaX)+(deltaY*deltaY));
+
+				deltaX /=magnitude;
+				deltaY /=magnitude;
+
+				deltaX*=m_simulator->GetStep();
+				deltaY*=m_simulator->GetStep();
+
+				move.m_dx = deltaX;
+				move.m_dy = deltaY;
+
+			}
 			break;
-			case AROUND: 
-				// Add check for whether our angle to the goal is the same as the angle from our init point to the goal.
-				// If not then check to see if the obstacle is in the way of our path to the goal.  If it is then continue
-				// going around the obstacle, if it isn't then head to the goal.
-				double obstacleAngle = (atan2(sensor.m_ymin - m_simulator->GetRobotCenterY(), sensor.m_xmin - m_simulator->GetRobotCenterX()) * 180 / 3.14159265);
-				double goalAngle = (atan2(m_simulator->GetGoalCenterY() - m_simulator->GetRobotCenterY(), m_simulator->GetGoalCenterX() - m_simulator->GetRobotCenterX()) * 180 / 3.14159265);
-				int angleDiff = abs((int)(goalAngle - obstacleAngle) % 360);
-				
-					if(m_simulator->IsPointNearLine(
-						m_simulator->GetRobotCenterX(), 
-						m_simulator->GetRobotCenterY(), 
-						m_simulator->GetRobotInitX(), 
-						m_simulator->GetRobotInitY(), 
-						m_simulator->GetGoalCenterX(), 
-						m_simulator->GetGoalCenterY()) &&
-						angleDiff > 80 && // Only go toward goal if obstacle isn't in the way
-						!m_simulator->ArePointsNear(m_leave[0], m_leave[1], m_simulator->GetRobotCenterX(), m_simulator->GetRobotCenterY()) // Only go to obstacle
-						// if we didn't just leave from this leave point last time
-						)
-					{
-						m_mode = STRAIGHT;
-						m_leave[0] = m_simulator->GetRobotCenterX();
-						m_leave[1] = m_simulator->GetRobotCenterY();
-						double initX = m_simulator->GetRobotInitX();
-						double initY = m_simulator->GetRobotInitY();
-						
-						double goalX = m_simulator->GetGoalCenterX();
-						double goalY = m_simulator->GetGoalCenterY();
-				
-						double deltaX = goalX-m_simulator->GetRobotCenterX();
-						double deltaY = goalY-m_simulator->GetRobotCenterY();
-				
-						double magnitude = sqrt( (deltaX*deltaX)+(deltaY*deltaY));
-				
-						deltaX /=magnitude;
-						deltaY /=magnitude;
-				
-						deltaX*=m_simulator->GetStep();
-						deltaY*=m_simulator->GetStep();
-				
-						move.m_dx = deltaX;
-						move.m_dy = deltaY;
-					}
-					else
-					{
-						double dx = (sensor.m_xmin-m_simulator->GetRobotCenterX());
-						double dy = (sensor.m_ymin-m_simulator->GetRobotCenterY());
-					
-						double magnitude = sqrt((dx*dx)+(dy*dy));
-						dx/=magnitude;
-						dy/=magnitude;
-						dx*=m_simulator->GetStep();
-						dy*=m_simulator->GetStep();
-						
-						move.m_dx = -dy;
-						move.m_dy = dx;
-					}
+		case AROUND:
+			// Add check for whether our angle to the goal is the same as the angle from our init point to the goal.
+			// If not then check to see if the obstacle is in the way of our path to the goal.  If it is then continue
+			// going around the obstacle, if it isn't then head to the goal.
+			double obstacleAngle = (atan2(sensor.m_ymin - robotY, sensor.m_xmin - robotX) * 180 / 3.14159265);
+			double goalAngle = (atan2(goalCenterY - robotY, goalCenterX - robotX) * 180 / 3.14159265);
+			int angleDiff = abs((int)(goalAngle - obstacleAngle) % 360);
+
+			if(m_simulator->IsPointNearLine(
+					robotX,
+					robotY,
+					robotInitX,
+					robotInitY,
+					goalCenterX,
+					goalCenterY) &&
+					angleDiff > 80 && // Only go toward goal if obstacle isn't in the way
+					!m_simulator->ArePointsNear(m_leave[0], m_leave[1], robotX, robotY) // Only go to obstacle
+					// if we didn't just leave from this leave point last time
+			)
+			{
+				m_mode = STRAIGHT;
+				m_leave[0] = robotX;
+				//This was added to have the leave point show up
+				m_distLeaveToGoal =1;
+				m_leave[1] = robotY;
+				double initX = robotInitX;
+				double initY = robotInitY;
+
+				double goalX = goalCenterX;
+				double goalY = goalCenterY;
+
+				double deltaX = goalX-robotX;
+				double deltaY = goalY-robotY;
+
+				double magnitude = sqrt( (deltaX*deltaX)+(deltaY*deltaY));
+
+				deltaX /=magnitude;
+				deltaY /=magnitude;
+
+				deltaX*=m_simulator->GetStep();
+				deltaY*=m_simulator->GetStep();
+
+				move.m_dx = deltaX;
+				move.m_dy = deltaY;
+			}
+			else
+			{
+				double dx = (sensor.m_xmin-robotX);
+				double dy = (sensor.m_ymin-robotY);
+
+				double magnitude = sqrt((dx*dx)+(dy*dy));
+				dx/=magnitude;
+				dy/=magnitude;
+				dx*=m_simulator->GetStep();
+				dy*=m_simulator->GetStep();
+
+				move.m_dx = -dy;
+				move.m_dy = dx;
+			}
 			break;
 
 
@@ -330,11 +338,9 @@ Move BugAlgorithms::Bug2(Sensor sensor)
 
 	}
 
-
-//	cout <<"Current state: "<<m_mode<<", currentMove["<<move.m_dx<<", "<<move.m_dy<<"]"<<endl;
-    return move;
+	return move;
 }
 
-       
+
 
 
