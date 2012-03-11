@@ -22,46 +22,51 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	double robotY = m_simulator->GetRobotY();
 	double robotTheta = m_simulator->GetRobotTheta();
 	int numberVert = m_simulator->GetNrRobotVertices();
-	vector<double[2][3]> robotJacobian;
-	vector<double[2]> goalGradient;
+	vector<RobotJacobian> robotJacobian;
+	vector<GoalGradient> goalGradient;
 	const double *robotVertices = m_simulator->GetRobotVertices();
-	double jacoby[2][3];
-	double gradient[2];
+	RobotJacobian roboJaco;
+	GoalGradient aGrad;
 	double goalX = m_simulator->GetGoalCenterX();
 	double goalY = m_simulator->GetGoalCenterY();
 
 	// Calculate Jacobian for the center of the robot
-	jacoby[0][0] = jacoby[1][1] = 1;
-	jacoby[0][1] = jacoby[1][0] = 0;
-	jacoby[0][2] = -1 * robotX * sin(robotTheta) - robotY * cos(robotTheta);
-	jacoby[1][2] = robotX * cos(robotTheta) - robotY * sin(robotTheta);
+	roboJaco.mJacobian[0][0] = roboJaco.mJacobian[1][1] =1;
+	roboJaco.mJacobian[0][1] = roboJaco.mJacobian[1][0] =0;
+	roboJaco.mJacobian[0][2] = -1 * robotX * sin(robotTheta) - robotY * cos(robotTheta);
+	roboJaco.mJacobian[1][2] = robotX * cos(robotTheta) - robotY * sin(robotTheta);
 
 	// Not sure if we'll need the center of the robots jacoby but I'll store it anyways
-	robotJacobian.push_back(jacoby);
+	robotJacobian.push_back(roboJaco);
 
 	// Calculate the gradient for the center of the robot
 	// Maybe this is supposed to be FK instead of the simple calculation below
-	gradient[0] = robotX - goalX;
-	gradient[1] = robotY - goalY;
-	goalGradient.push_back(gradient);
+	aGrad.mGoalGradient[0] = robotX - goalX;
+	aGrad.mGoalGradient[1] = robotY - goalY;
+	goalGradient.push_back(aGrad);
 
 	// Loop through all vertices on this object and get calculate the Jacobian
 	double vertX;
 	double vertY;
 	
 	for (int idx = 0; idx < numberVert; idx++){
+		RobotJacobian aJacoby;
 		vertX = robotVertices[idx * 2];
 		vertY = robotVertices[idx * 2 + 1];
 
 		//Calculate the Jacobian
-		jacoby[0][2] = -1 * vertX * sin(robotTheta) - vertY * cos(robotTheta);
-		jacoby[1][2] = vertX * cos(robotTheta) - vertY * sin(robotTheta);
-		robotJacobian.push_back(jacoby);
+		aJacoby.mJacobian[0][0] = aJacoby.mJacobian[1][1] =1;
+		aJacoby.mJacobian[0][1] = aJacoby.mJacobian[1][0] =0;
+		aJacoby.mJacobian[0][2] = -1 * vertX * sin(robotTheta) - vertY * cos(robotTheta);
+		aJacoby.mJacobian[1][2] = vertX * cos(robotTheta) - vertY * sin(robotTheta);
+
+		robotJacobian.push_back(aJacoby);
 
 		//Calculate the gradient to the goal
-		gradient[0] = vertX - goalX;
-		gradient[1] = vertY - goalY;
-		goalGradient.push_back(gradient);
+		GoalGradient aGradient;
+		aGradient.mGoalGradient[0] = vertX - goalX;
+		aGradient.mGoalGradient[1] = vertY - goalY;
+		goalGradient.push_back(aGradient);
 	}
 
 	// 
