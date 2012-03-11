@@ -94,10 +94,17 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		goalGradient.push_back(aGradient);
 	}
 
+
+	//Chris: Can't we just do this inside of the for loop as we go? 
 	// We now have our Jacobian 2x3 Matrix and our Gradient 1x2 Matrix
 	// Calculate the overall gradient and select movement
-	for (int idx = 0; idx < 3; idx++){
-
+	
+	for (int idx = 0; idx < numberVert; idx++){
+		RobotJacobian currJaco = robotJacobian[idx];
+		GoalGradient currGrad = goalGradient[idx];
+		move.m_dx += ( (currJaco.mJacobian[0][0] *currGrad.mGoalGradient[0]) + (currJaco.mJacobian[1][0]*currGrad.mGoalGradient[1]) );
+		move.m_dy += ( (currJaco.mJacobian[0][1] *currGrad.mGoalGradient[0]) + (currJaco.mJacobian[1][1]*currGrad.mGoalGradient[1]) );
+		move.m_dx += ( (currJaco.mJacobian[0][2] *currGrad.mGoalGradient[0]) + (currJaco.mJacobian[1][2]*currGrad.mGoalGradient[1]) );
 	}
 	
 

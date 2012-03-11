@@ -8,6 +8,13 @@ struct RigidBodyMove
     double m_dx;
     double m_dy;
     double m_dtheta;
+
+	RigidBodyMove()
+	{
+		m_dx = 0;
+		m_dy = 0;
+		m_dtheta = 0;
+	}
 };
 
 struct RobotJacobian
