@@ -6,6 +6,7 @@ using namespace std;
 RigidBodyPlanner::RigidBodyPlanner(RigidBodySimulator * const simulator)
 {
     m_simulator = simulator;   
+	//I added this to see if I got the windows configuration to work.
 }
 
 RigidBodyPlanner::~RigidBodyPlanner(void)
