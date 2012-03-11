@@ -1,5 +1,6 @@
 #include "RigidBodyPlanner.hpp"
 #include <vector>
+#include <windows.h>
 
 using namespace std;
 
@@ -54,7 +55,14 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	double fk[2];
 	double uAtt[2];
 	double uRep[2];
-	double scale = 3;  // We need to figure out a good scaling
+	double scale = .01;  // We need to figure out a good scaling
+	
+	//These are the various scales
+	double attrScaleXY = .25;
+	double attrScaleTheta =1;
+	double repScaleXY = .5;
+	double repScaleTheta =1;
+
 	for (int idx = 0; idx < numberVert; idx++){
 		RobotJacobian aJacoby;
 		vertX = robotVertices[idx * 2];
@@ -86,28 +94,19 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			uRep[1] += scale * (point.m_y - fk[1]);
 		}
 
-		GoalGradient aGradient;
-		// Calculate the gradient using opposite value of attractive +
-		// repulsive forces
-		aGradient.mGoalGradient[0] = -1 * (uAtt[0] + uRep[0]);
-		aGradient.mGoalGradient[1] = -1 * (uAtt[1] + uRep[1]);
-		goalGradient.push_back(aGradient);
+
+		//Multiply the Jacobian with the attractive force and add it
+		move.m_dx -= attrScaleXY*( (aJacoby.mJacobian[0][0] *uAtt[0]) + (aJacoby.mJacobian[1][0]*uAtt[1]) );
+		move.m_dy -= attrScaleXY*( (aJacoby.mJacobian[0][1] *uAtt[0]) + (aJacoby.mJacobian[1][1]*uAtt[1]) );
+		move.m_dtheta -= attrScaleTheta*( (aJacoby.mJacobian[0][2] *uAtt[0]) + (aJacoby.mJacobian[1][2]*uAtt[1]) );
+
+		//Multiply the Jacobian with the repulsive force and add it
+		move.m_dx += repScaleXY*( (aJacoby.mJacobian[0][0] *uRep[0]) + (aJacoby.mJacobian[1][0]*uRep[1]) );
+		move.m_dy += repScaleXY*( (aJacoby.mJacobian[0][1] *uRep[0]) + (aJacoby.mJacobian[1][1]*uRep[1]) );
+		move.m_dtheta += repScaleTheta *( (aJacoby.mJacobian[0][2] *uRep[0]) + (aJacoby.mJacobian[1][2]*uRep[1]) );
 	}
-
-
-	//Chris: Can't we just do this inside of the for loop as we go? 
-	// We now have our Jacobian 2x3 Matrix and our Gradient 1x2 Matrix
-	// Calculate the overall gradient and select movement
+	printf("Moving to[%4.3f, %4.3f, %4.3f] \n#include <windows.h>",move.m_dx, move.m_dy, move.m_dtheta);
 	
-	for (int idx = 0; idx < numberVert; idx++){
-		RobotJacobian currJaco = robotJacobian[idx];
-		GoalGradient currGrad = goalGradient[idx];
-		move.m_dx += ( (currJaco.mJacobian[0][0] *currGrad.mGoalGradient[0]) + (currJaco.mJacobian[1][0]*currGrad.mGoalGradient[1]) );
-		move.m_dy += ( (currJaco.mJacobian[0][1] *currGrad.mGoalGradient[0]) + (currJaco.mJacobian[1][1]*currGrad.mGoalGradient[1]) );
-		move.m_dx += ( (currJaco.mJacobian[0][2] *currGrad.mGoalGradient[0]) + (currJaco.mJacobian[1][2]*currGrad.mGoalGradient[1]) );
-	}
-	
-
     return move;
 }
 
