@@ -63,7 +63,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		
 			if(i ==2)
 			{
-				attractiveResult[0][i] = normalizeAngle(attractiveResult[0][i]);
+				attractiveResult[0][i] = attractiveResult[0][i];
 			}
 		}
 		/* simplified to for loop above
@@ -81,11 +81,11 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 
 	}
 
-	double thetaScale = PI/4;
+	double thetaScale = PI/64;
 	double xyScale = .001;
-	move.m_dtheta = normalizeAngle(thetaScale*totalAttractiveForce[0][2]);
-	move.m_dx = xyScale*totalAttractiveForce[0][0];
-	move.m_dy = xyScale*totalAttractiveForce[0][1];
+	move.m_dtheta = thetaScale * (totalAttractiveForce[0][2]/abs(totalAttractiveForce[0][2]));
+	move.m_dx = -xyScale*totalAttractiveForce[0][0];
+	move.m_dy = -xyScale*totalAttractiveForce[0][1];
 
 	printf("Angle is now: %4.4f\n",move.m_dtheta);
 	//Sleep(2000);
@@ -189,29 +189,3 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
     return move;
 }
 */
-
-double RigidBodyPlanner::normalizeAngle(double a) {
-
-	double returnAngle = modulus(a,2*PI);
-
-	if(returnAngle > PI)
-	{
-		returnAngle-= (2*PI);
-	}
-
-	if(returnAngle < -PI)
-	{
-		returnAngle+=(2*PI);
-	}
-
-	return returnAngle;
-}
-
-/**
-* Method was found at: http://bytes.com/topic/c/answers/495889-modulus-double-variables
-*/
-double RigidBodyPlanner::modulus(double a, double b)
-{
-	int result = static_cast<int>( a / b );
-	return a - static_cast<double>( result ) * b;
-}
