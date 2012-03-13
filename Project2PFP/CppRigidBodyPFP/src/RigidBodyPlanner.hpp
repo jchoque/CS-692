@@ -51,6 +51,8 @@ public:
     
 protected:
     RigidBodySimulator *m_simulator;
+	double normalizeAngle(double a);
+	double modulus(double a, double b);
 };
 
 #endif

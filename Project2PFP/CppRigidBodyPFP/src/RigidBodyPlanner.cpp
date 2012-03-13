@@ -31,30 +31,65 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	double goalY = m_simulator->GetGoalCenterY();
 
 	//Total sum of the attractive force
-	double [2][1] totalAttractiveForce;
+	double totalAttractiveForce[1][3];
 	//Initialize the counter
-	totalAttractiveForce[0][0] = totalAttractiveForce[1][0] = 0;
+	memset(totalAttractiveForce, 0, sizeof(totalAttractiveForce[0][0]) * 1 * 3);
 
 	for(int idx = 0; idx<m_simulator->GetNrRobotVertices(); idx++)
 	{
-		double pointX = m_simulator->GetRobotVertices[2*idx];
-		double pointY = m_simulator->GetRobotVertices[2*idx+1];
+		double pointX = m_simulator->GetRobotVertices()[2*idx];
+		double pointY = m_simulator->GetRobotVertices()[2*idx+1];
 
-		double [2][1] fk;
+		double fk[2][1];
 		fk[0][0] = (pointX * cos(configTheta)) - (pointY*sin(configTheta)) + (configX);
 		fk[1][0] = (pointX * sin(configTheta)) + (pointY*cos(configTheta)) + (configY);
 
-		double [2][1] attractiveForce;
+		double attractiveForce[2][1];
 
 		attractiveForce[0][0] = fk[0][0]-goalX;
 		attractiveForce[1][0] = fk[1][0]-goalY;
 		
-		double [2][3] jacobian;
-		jaobian[0][0] = 
+		double  jacobian[2][3];
+		jacobian[0][0] = jacobian[1][1] = 1;
+		jacobian[0][1] = jacobian[1][0] = 0;
+		jacobian[0][2] = (-pointX * sin(configTheta)) - (pointY*cos(configTheta));
+		jacobian[1][2] = - (pointX * cos(configTheta)) - (pointY *sin(configTheta));
+
+		double  attractiveResult[1][3];
+
+		for(int i=0;i<3;i++)
+		{
+			attractiveResult[0][i] = ( (attractiveForce[0][0]*jacobian[0][i]) + (attractiveForce[1][0]*jacobian[1][i]) );
+		
+			if(i ==2)
+			{
+				attractiveResult[0][i] = normalizeAngle(attractiveResult[0][i]);
+			}
+		}
+		/* simplified to for loop above
+		attractiveResult[0][0] = ( (attractiveForce[0][0]*jacobian[0][0]) + (attractiveForce[1][0]*jacobian[1][0]) );
+		attractiveResult[0][1] = ( (attractiveForce[0][0]*jacobian[0][1]) + (attractiveForce[1][0]*jacobian[1][1]) );
+		attractiveResult[0][2] = ( (attractiveForce[0][0]*jacobian[0][2]) + (attractiveForce[1][0]*jacobian[1][2]) );
+		*/
+		for(int i=0;i<1;i++)
+		{
+			for(int j=0;j<3;j++)
+			{
+				totalAttractiveForce[i][j] +=attractiveResult[i][j];
+			}
+		}
+
 	}
 
-	double [2][2] forwardKinematics;
+	double thetaScale = PI/4;
+	double xyScale = .001;
+	move.m_dtheta = normalizeAngle(thetaScale*totalAttractiveForce[0][2]);
+	move.m_dx = xyScale*totalAttractiveForce[0][0];
+	move.m_dy = xyScale*totalAttractiveForce[0][1];
 
+	printf("Angle is now: %4.4f\n",move.m_dtheta);
+	//Sleep(2000);
+	return move;
 }
 
 /*
@@ -155,3 +190,28 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 }
 */
 
+double RigidBodyPlanner::normalizeAngle(double a) {
+
+	double returnAngle = modulus(a,2*PI);
+
+	if(returnAngle > PI)
+	{
+		returnAngle-= (2*PI);
+	}
+
+	if(returnAngle < -PI)
+	{
+		returnAngle+=(2*PI);
+	}
+
+	return returnAngle;
+}
+
+/**
+* Method was found at: http://bytes.com/topic/c/answers/495889-modulus-double-variables
+*/
+double RigidBodyPlanner::modulus(double a, double b)
+{
+	int result = static_cast<int>( a / b );
+	return a - static_cast<double>( result ) * b;
+}
