@@ -14,8 +14,50 @@ RigidBodyPlanner::~RigidBodyPlanner(void)
 {
     //do not delete m_simulator  
 }
+RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
+{
+	RigidBodyMove move;
+	
+	//The theta from the configuration space
+	double configTheta = m_simulator->GetRobotTheta();
 
+	//The x value of the robot in configuration space
+	double configX = m_simulator->GetRobotX();
 
+	//The y value of the robot in configuration space
+	double configY = m_simulator->GetRobotY();
+
+	double goalX = m_simulator->GetGoalCenterX();
+	double goalY = m_simulator->GetGoalCenterY();
+
+	//Total sum of the attractive force
+	double [2][1] totalAttractiveForce;
+	//Initialize the counter
+	totalAttractiveForce[0][0] = totalAttractiveForce[1][0] = 0;
+
+	for(int idx = 0; idx<m_simulator->GetNrRobotVertices(); idx++)
+	{
+		double pointX = m_simulator->GetRobotVertices[2*idx];
+		double pointY = m_simulator->GetRobotVertices[2*idx+1];
+
+		double [2][1] fk;
+		fk[0][0] = (pointX * cos(configTheta)) - (pointY*sin(configTheta)) + (configX);
+		fk[1][0] = (pointX * sin(configTheta)) + (pointY*cos(configTheta)) + (configY);
+
+		double [2][1] attractiveForce;
+
+		attractiveForce[0][0] = fk[0][0]-goalX;
+		attractiveForce[1][0] = fk[1][0]-goalY;
+		
+		double [2][3] jacobian;
+		jaobian[0][0] = 
+	}
+
+	double [2][2] forwardKinematics;
+
+}
+
+/*
 RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
     
 {
@@ -61,7 +103,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	double attrScaleXY = .25;
 	double attrScaleTheta =1;
 	double repScaleXY = .5;
-	double repScaleTheta =1;
+	double repScaleTheta =PI/4;
 
 	for (int idx = 0; idx < numberVert; idx++){
 		RobotJacobian aJacoby;
@@ -105,9 +147,11 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		move.m_dy += repScaleXY*( (aJacoby.mJacobian[0][1] *uRep[0]) + (aJacoby.mJacobian[1][1]*uRep[1]) );
 		move.m_dtheta += repScaleTheta *( (aJacoby.mJacobian[0][2] *uRep[0]) + (aJacoby.mJacobian[1][2]*uRep[1]) );
 	}
-	printf("Moving to[%4.3f, %4.3f, %4.3f] \n#include <windows.h>",move.m_dx, move.m_dy, move.m_dtheta);
-	
+
+	double degrees = move.m_dtheta *180/PI;
+	printf("Moving to[%4.3f, %4.3f, %4.3f] with heading[%4.3f]\n",move.m_dx, move.m_dy, degrees);
+	Sleep(1);
     return move;
 }
-
+*/
 

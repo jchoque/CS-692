@@ -2,7 +2,7 @@
 #define RIGID_BODY_PLANNER_HPP_
 
 #include "RigidBodySimulator.hpp"
-
+#define PI 3.14159
 struct RigidBodyMove
 {
     double m_dx;
@@ -16,6 +16,7 @@ struct RigidBodyMove
 		m_dtheta = 0;
 	}
 };
+
 
 struct RobotJacobian
 {
