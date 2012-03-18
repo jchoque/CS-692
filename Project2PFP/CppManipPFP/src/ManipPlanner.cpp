@@ -21,15 +21,18 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 	double fkY = m_manipSimulator->GetLinkEndY(numJoints)- m_manipSimulator->GetGoalCenterY();
 	
 	double aJaco[2][1];
-	for(int i=0;i<numJoints;i++)
+	for(int i=0;i<numJoints+1;i++)
 	{
-		aJaco[0][0] = -m_manipSimulator->GetLinkEndY(numJoints) + -m_manipSimulator->GetLinkStartY(i);
-		aJaco[1][0] = -m_manipSimulator->GetLinkEndX(numJoints) -  m_manipSimulator->GetLinkStartX(i);
+
+		aJaco[0][0] = -m_manipSimulator->GetLinkEndY(numJoints) + m_manipSimulator->GetLinkStartY(i);
+		aJaco[1][0] = m_manipSimulator->GetLinkEndX(numJoints) -  m_manipSimulator->GetLinkStartX(i);
 
 		double jacoMultiply = (fkX *aJaco[0][0]) + (fkY * aJaco[1][0]);
 
-		allLinksDeltaTheta[i] = ( jacoMultiply / (abs(jacoMultiply)) * thetaScale);
+		allLinksDeltaTheta[i] = -( jacoMultiply / (abs(jacoMultiply)) * thetaScale);
 	}
+
+	printf("Delta theta is: %4.3f\n", allLinksDeltaTheta[numJoints]);
 
 	//Now multiply out
 }
