@@ -1,6 +1,8 @@
 #include "RigidBodyPlanner.hpp"
 #include <vector>
+#include <math.h>
 #include <windows.h>
+#include <iostream>
 
 using namespace std;
 
@@ -30,47 +32,80 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	double goalX = m_simulator->GetGoalCenterX();
 	double goalY = m_simulator->GetGoalCenterY();
 
-	//Total sum of the attractive force
-	double totalAttractiveForce[1][3];
-	//Initialize the counter
-	memset(totalAttractiveForce, 0, sizeof(totalAttractiveForce[0][0]) * 1 * 3);
+	if (!m_simulator->HasRobotReachedGoal()) {
 
+	//Total sum of the different forces
+	double totalAttractiveForce[1][3];
+	double totalRepulsiveForce[2][1];
+	double totalJacobian[2][3];
+
+	//Initialize the counters
+	memset(totalAttractiveForce, 0, sizeof(totalAttractiveForce[0][0]) * 1 * 3);
+	memset(totalRepulsiveForce, 0, sizeof(totalRepulsiveForce[0][0]) * 2 * 1);
+	memset(totalJacobian, 0, sizeof(totalJacobian[0][0]) * 2 * 3);
+
+	const double *robotVertices = m_simulator->GetRobotVertices();
+
+	// Loop over all of the vertices on the robot
 	for(int idx = 0; idx<m_simulator->GetNrRobotVertices(); idx++)
 	{
-		double pointX = m_simulator->GetRobotVertices()[2*idx];
-		double pointY = m_simulator->GetRobotVertices()[2*idx+1];
-
+		double pointX = robotVertices[2*idx];
+		double pointY = robotVertices[2*idx+1];
+		
+		/* Calculate the Forward Kinematics for this vertex j
+		*       / xj cos(theta) - yj sin(theta) + x  \
+		* FKj = |                                      |
+		*       \ xj sin(theta) + yj cos(theta) + y  /
+		* Where j represents the index of the current vertice on the robot
+		 */
 		double fk[2][1];
 		fk[0][0] = (pointX * cos(configTheta)) - (pointY*sin(configTheta)) + (configX);
 		fk[1][0] = (pointX * sin(configTheta)) + (pointY*cos(configTheta)) + (configY);
-
+		
+		/* Calculate the attractive force for this vertex j
+		*                / Goalx \
+		* Uattj = FKj - |         |
+		*                \ Goaly /
+		*
+		 */
 		double attractiveForce[2][1];
-
 		attractiveForce[0][0] = fk[0][0]-goalX;
 		attractiveForce[1][0] = fk[1][0]-goalY;
+
+		/* Calculate the repulsion force for all obstacles with respect to
+		* this vertex
+		*           / Oix \
+		* Urepij = |       |  - FKj
+		*           \ Oiy /
+		* Where Oiy and Oix are the closest point to this vertex on obstacle i
+		 */
+		totalRepulsiveForce[0][0] = totalRepulsiveForce[1][0] = 0;
+		for (int obsIdx = 0; obsIdx < m_simulator->GetNrObstacles(); obsIdx++){
+			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, fk[0][0], fk[1][0]);
+			totalRepulsiveForce[0][0] += (point.m_x - fk[0][0]);
+			totalRepulsiveForce[1][0] += (point.m_y - fk[1][0]);
+		}
 		
+		/* Calculate the Jacobian
+		*
+		*       / 1 0 -Xj * sin(theta) - Yj * cos(theta) \
+		* Jj = |                                          |
+		*       \ 0 1  Xj * cos(theta) - Yj * sin(theta) /
+		*
+		 */
 		double  jacobian[2][3];
 		jacobian[0][0] = jacobian[1][1] = 1;
 		jacobian[0][1] = jacobian[1][0] = 0;
 		jacobian[0][2] = (-pointX * sin(configTheta)) - (pointY*cos(configTheta));
-		jacobian[1][2] = - (pointX * cos(configTheta)) - (pointY *sin(configTheta));
-
+		jacobian[1][2] = (pointX * cos(configTheta)) - (pointY *sin(configTheta));
+		
+		// Calculate the final values for this vertex based on prior Uatt, Urep, Jacobian, and FK
 		double  attractiveResult[1][3];
-
-		for(int i=0;i<3;i++)
+		for(int i = 0; i < 3; i++)
 		{
 			attractiveResult[0][i] = ( (attractiveForce[0][0]*jacobian[0][i]) + (attractiveForce[1][0]*jacobian[1][i]) );
-		
-			if(i ==2)
-			{
-				attractiveResult[0][i] = attractiveResult[0][i];
-			}
 		}
-		/* simplified to for loop above
-		attractiveResult[0][0] = ( (attractiveForce[0][0]*jacobian[0][0]) + (attractiveForce[1][0]*jacobian[1][0]) );
-		attractiveResult[0][1] = ( (attractiveForce[0][0]*jacobian[0][1]) + (attractiveForce[1][0]*jacobian[1][1]) );
-		attractiveResult[0][2] = ( (attractiveForce[0][0]*jacobian[0][2]) + (attractiveForce[1][0]*jacobian[1][2]) );
-		*/
+		
 		for(int i=0;i<1;i++)
 		{
 			for(int j=0;j<3;j++)
@@ -79,16 +114,52 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			}
 		}
 
+		for (int i = 0; i < 2; i++){
+			for (int j = 0; j < 3; j++){
+				totalJacobian[i][j] += jacobian[i][j];
+			}
+		}
+
+		double  repulsiveResult[2][1];
+		memset(repulsiveResult, 0, sizeof(repulsiveResult[0][0]) * 2 * 1);
+		for(int i = 0; i < 3; i++)
+		{
+			repulsiveResult[0][0] += (totalRepulsiveForce[0][0]*jacobian[0][i]);
+			repulsiveResult[1][0] += (totalRepulsiveForce[1][0]*jacobian[1][i]);
+		}
+
+		for(int i = 0; i < 3; i++)
+		{
+			totalRepulsiveForce[0][0] += repulsiveResult[0][0];
+			totalRepulsiveForce[1][0] += repulsiveResult[1][0];
+		}
+
 	}
 
 	double thetaScale = PI/64;
 	double xyScale = .001;
-	move.m_dtheta = thetaScale * (totalAttractiveForce[0][2]/abs(totalAttractiveForce[0][2]));
-	move.m_dx = -xyScale*totalAttractiveForce[0][0];
-	move.m_dy = -xyScale*totalAttractiveForce[0][1];
+	double repScale = .001;
+	double thetaValue = (totalAttractiveForce[0][2]/abs(totalAttractiveForce[0][2]));
 
-	printf("Angle is now: %4.4f\n",move.m_dtheta);
-	//Sleep(2000);
+	if (thetaValue > 0){
+		move.m_dtheta = PI/64;
+	}
+	else if (thetaValue < 0){
+		move.m_dtheta = -(PI/64);
+	}
+
+	if (totalRepulsiveForce[0][0] < totalAttractiveForce[0][0]  || totalRepulsiveForce[1][0] < totalAttractiveForce[0][1]){
+		repScale = 0.002;
+	}
+	cout << "Attrac\t" << totalAttractiveForce[0][0] << "\t" << totalAttractiveForce[0][1] << "\t::\t" 
+	 	 << "Repuls\t" << totalRepulsiveForce[0][0]  << "\t" << totalRepulsiveForce[1][0]  << endl;
+
+	move.m_dx = -(xyScale*totalAttractiveForce[0][0] + repScale*totalRepulsiveForce[0][0]);
+	move.m_dy = -(xyScale*totalAttractiveForce[0][1] + repScale*totalRepulsiveForce[1][0]);
+
+	// Go in slow mode
+	Sleep(150);
+	}
 	return move;
 }
 
