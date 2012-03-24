@@ -34,8 +34,8 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 
 		double jacoMultiply = (fkX *aJaco.jacoX) + (fkY * aJaco.jacoY);
 
-		allLinksDeltaTheta[i] = -( jacoMultiply / (abs(jacoMultiply)) * thetaScale);
-
+		//allLinksDeltaTheta[i] = -( jacoMultiply / (abs(jacoMultiply)) * thetaScale);
+		allLinksDeltaTheta[i] = -jacoMultiply;
 		allJacos.push_back(aJaco);
 	}
 
@@ -59,16 +59,24 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 			repPoY += obstacle_y - fkYi;
 		}
 
-		
-		double jacoMultiply = (repPoX *allJacos[i].jacoX) + (repPoY * allJacos[i].jacoY);
+		//Jacobian2x2 aJaco = allJacos[i];
+		Jacobian2x2 aJaco;
+		aJaco.jacoX = -m_manipSimulator->GetLinkEndY(i) + m_manipSimulator->GetLinkStartY(0);
+		aJaco.jacoY = m_manipSimulator->GetLinkEndX(i) -  m_manipSimulator->GetLinkStartX(0);		
+		double jacoMultiply = (repPoX *aJaco.jacoX) + (repPoY * aJaco.jacoY);
 
-		if(jacoMultiply != 0)
+	
+		allLinksDeltaTheta[i] +=jacoMultiply;
+		//allLinksDeltaTheta[i]-= (thetaScale)*(jacoMultiply/abs(jacoMultiply));
+		if(allLinksDeltaTheta[i] != 0)
 		{
-			allLinksDeltaTheta[i]-= (thetaScale*1.25)*(jacoMultiply/abs(jacoMultiply));
-		}
+			allLinksDeltaTheta[i] = allLinksDeltaTheta[i]/abs(allLinksDeltaTheta[i]) *thetaScale;
+		} 
 		
 	}
 
+
+	
 	printf("Delta theta is: %4.3f\n", allLinksDeltaTheta[numJoints]);
 
 	//Now multiply out
