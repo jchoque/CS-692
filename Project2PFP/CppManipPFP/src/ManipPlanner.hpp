@@ -3,6 +3,14 @@
 
 #include "ManipSimulator.hpp"
 
+
+struct Jacobian2x2
+{
+    double jacoX;
+    double jacoY;    
+};
+
+
 class ManipPlanner
 {
 public:

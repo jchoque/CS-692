@@ -1,5 +1,6 @@
 #include "ManipPlanner.hpp"
 #include "Windows.h"
+#include <vector>
 
 ManipPlanner::ManipPlanner(ManipSimulator * const manipSimulator)
 {
@@ -20,16 +21,52 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 	double fkX = m_manipSimulator->GetLinkEndX(numJoints) - m_manipSimulator->GetGoalCenterX();
 	double fkY = m_manipSimulator->GetLinkEndY(numJoints)- m_manipSimulator->GetGoalCenterY();
 	
+	std::vector<Jacobian2x2>allJacos;
 	double aJaco[2][1];
 	for(int i=0;i<numJoints+1;i++)
 	{
+		Jacobian2x2 aJaco;
+		//aJaco[0][0] = -m_manipSimulator->GetLinkEndY(numJoints) + m_manipSimulator->GetLinkStartY(i);
+		//aJaco[1][0] = m_manipSimulator->GetLinkEndX(numJoints) -  m_manipSimulator->GetLinkStartX(i);
 
-		aJaco[0][0] = -m_manipSimulator->GetLinkEndY(numJoints) + m_manipSimulator->GetLinkStartY(i);
-		aJaco[1][0] = m_manipSimulator->GetLinkEndX(numJoints) -  m_manipSimulator->GetLinkStartX(i);
+		aJaco.jacoX = -m_manipSimulator->GetLinkEndY(numJoints) + m_manipSimulator->GetLinkStartY(i);
+		aJaco.jacoY = m_manipSimulator->GetLinkEndX(numJoints) -  m_manipSimulator->GetLinkStartX(i);
 
-		double jacoMultiply = (fkX *aJaco[0][0]) + (fkY * aJaco[1][0]);
+		double jacoMultiply = (fkX *aJaco.jacoX) + (fkY * aJaco.jacoY);
 
 		allLinksDeltaTheta[i] = -( jacoMultiply / (abs(jacoMultiply)) * thetaScale);
+
+		allJacos.push_back(aJaco);
+	}
+
+	//Now compute repulsive forces
+
+	for(int i=0;i<numJoints+1;i++)
+	{
+		//First "calculate" the FK on each joint
+		double fkXi = m_manipSimulator->GetLinkEndX(i);
+		double fkYi = m_manipSimulator->GetLinkEndY(i);
+	
+		double repPoX = 0;
+		double repPoY = 0;
+		for(int j=0;j<m_manipSimulator->GetNrObstacles(); j++)
+		{
+			Point closePoint = m_manipSimulator->ClosestPointOnObstacle(j,fkXi,fkYi);
+			double obstacle_x = closePoint.m_x;
+			double obstacle_y = closePoint.m_y;
+
+			repPoX += obstacle_x - fkXi;
+			repPoY += obstacle_y - fkYi;
+		}
+
+		
+		double jacoMultiply = (repPoX *allJacos[i].jacoX) + (repPoY * allJacos[i].jacoY);
+
+		if(jacoMultiply != 0)
+		{
+			allLinksDeltaTheta[i]+= (jacoMultiply/abs(jacoMultiply));
+		}
+		
 	}
 
 	printf("Delta theta is: %4.3f\n", allLinksDeltaTheta[numJoints]);
