@@ -64,7 +64,7 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 
 		if(jacoMultiply != 0)
 		{
-			allLinksDeltaTheta[i]+= (jacoMultiply/abs(jacoMultiply));
+			allLinksDeltaTheta[i]-= (thetaScale*1.25)*(jacoMultiply/abs(jacoMultiply));
 		}
 		
 	}
