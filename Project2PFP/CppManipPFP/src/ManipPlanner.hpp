@@ -6,6 +6,11 @@
 
 struct Jacobian2x2
 {
+	Jacobian2x2(double pJacox, double pJacoy)
+	{
+		jacoX  = pJacox;
+		jacoY  = pJacoy;
+	}
     double jacoX;
     double jacoY;    
 };

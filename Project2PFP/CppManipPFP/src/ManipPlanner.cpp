@@ -25,7 +25,7 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 	double aJaco[2][1];
 	for(int i=0;i<numJoints+1;i++)
 	{
-		Jacobian2x2 aJaco;
+		Jacobian2x2 aJaco(0,0);
 		//aJaco[0][0] = -m_manipSimulator->GetLinkEndY(numJoints) + m_manipSimulator->GetLinkStartY(i);
 		//aJaco[1][0] = m_manipSimulator->GetLinkEndX(numJoints) -  m_manipSimulator->GetLinkStartX(i);
 
@@ -41,39 +41,43 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 
 	//Now compute repulsive forces
 
-	for(int i=0;i<numJoints+1;i++)
+	for(int i=0;i<m_manipSimulator->GetNrObstacles();i++)
 	{
-		//First "calculate" the FK on each joint
-		double fkXi = m_manipSimulator->GetLinkEndX(i);
-		double fkYi = m_manipSimulator->GetLinkEndY(i);
-	
-		double repPoX = 0;
-		double repPoY = 0;
-		for(int j=0;j<m_manipSimulator->GetNrObstacles(); j++)
+		for(int j=0;j<m_manipSimulator->GetNrLinks(); j++)
 		{
-			Point closePoint = m_manipSimulator->ClosestPointOnObstacle(j,fkXi,fkYi);
-			double obstacle_x = closePoint.m_x;
-			double obstacle_y = closePoint.m_y;
+			
+			Jacobian2x2 aJaco(0,0);
+			for(int k=0;k<=j;k++)
+			{
+				aJaco.jacoX += (-m_manipSimulator->GetLinkEndY(j) + m_manipSimulator->GetLinkStartY(k));
+				aJaco.jacoY += (m_manipSimulator->GetLinkEndX(j) -m_manipSimulator->GetLinkStartX(k));
+			}
 
-			repPoX += obstacle_x - fkXi;
-			repPoY += obstacle_y - fkYi;
-		}
+			double fkX = m_manipSimulator->GetLinkEndX(j);
+			double fkY = m_manipSimulator->GetLinkEndY(j);
 
-		//Jacobian2x2 aJaco = allJacos[i];
-		Jacobian2x2 aJaco;
-		aJaco.jacoX = -m_manipSimulator->GetLinkEndY(i) + m_manipSimulator->GetLinkStartY(0);
-		aJaco.jacoY = m_manipSimulator->GetLinkEndX(i) -  m_manipSimulator->GetLinkStartX(0);		
-		double jacoMultiply = (repPoX *aJaco.jacoX) + (repPoY * aJaco.jacoY);
+			Point closestPoint = m_manipSimulator->ClosestPointOnObstacle(i,fkX,fkY);
 
-	
-		allLinksDeltaTheta[i] +=jacoMultiply;
-		//allLinksDeltaTheta[i]-= (thetaScale)*(jacoMultiply/abs(jacoMultiply));
-		if(allLinksDeltaTheta[i] != 0)
-		{
-			allLinksDeltaTheta[i] = allLinksDeltaTheta[i]/abs(allLinksDeltaTheta[i]) *thetaScale;
-		} 
-		
+			double uRepX = closestPoint.m_x - fkX;
+			double uRepY = closestPoint.m_y - fkY;
+
+			double jacoMultiply = 2*(uRepX *aJaco.jacoX) + (uRepY * aJaco.jacoY);
+			
+			allLinksDeltaTheta[j] +=jacoMultiply;
+
 	}
+
+
+	}
+	
+	for(int j=0;j<m_manipSimulator->GetNrLinks();j++) 
+	{
+		if(allLinksDeltaTheta[j] != 0)
+		{
+			allLinksDeltaTheta[j] = allLinksDeltaTheta[j]/abs(allLinksDeltaTheta[j]) *thetaScale;
+		}
+	}
+
 
 
 	
