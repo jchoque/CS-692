@@ -40,9 +40,28 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 	}
 
 	//Now compute repulsive forces
-
-	for(int i=0;i<m_manipSimulator->GetNrObstacles();i++)
+	CalculateRepulsion(allLinksDeltaTheta);
+	
+	for(int j=0;j<m_manipSimulator->GetNrLinks();j++) 
 	{
+		if(allLinksDeltaTheta[j] != 0)
+		{
+			allLinksDeltaTheta[j] = allLinksDeltaTheta[j]/abs(allLinksDeltaTheta[j]) *thetaScale;
+		}
+	}
+
+
+
+	
+	printf("Delta theta is: %4.3f\n", allLinksDeltaTheta[numJoints]);
+
+	//Now multiply out
+}
+
+ void ManipPlanner::CalculateRepulsion(double allLinksDeltaTheta[])
+ {
+	 for(int i=0;i<m_manipSimulator->GetNrObstacles();i++)
+	 {
 		for(int j=0;j<m_manipSimulator->GetNrLinks(); j++)
 		{
 			
@@ -63,26 +82,8 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 
 			double jacoMultiply = 2*(uRepX *aJaco.jacoX) + (uRepY * aJaco.jacoY);
 			
-			allLinksDeltaTheta[j] +=jacoMultiply;
-
-	}
-
-
-	}
-	
-	for(int j=0;j<m_manipSimulator->GetNrLinks();j++) 
-	{
-		if(allLinksDeltaTheta[j] != 0)
-		{
-			allLinksDeltaTheta[j] = allLinksDeltaTheta[j]/abs(allLinksDeltaTheta[j]) *thetaScale;
+			allLinksDeltaTheta[j] -=jacoMultiply;
 		}
 	}
-
-
-
-	
-	printf("Delta theta is: %4.3f\n", allLinksDeltaTheta[numJoints]);
-
-	//Now multiply out
-}
+ }
 

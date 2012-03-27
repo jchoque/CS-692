@@ -50,7 +50,7 @@ public:
     
         
 protected:    
-    
+    void CalculateRepulsion(double allLinksDeltaTheta[]);
     ManipSimulator  *m_manipSimulator;
 };
 
