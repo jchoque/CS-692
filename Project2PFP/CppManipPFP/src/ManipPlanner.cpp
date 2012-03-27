@@ -20,6 +20,10 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
    
 	double fkX = m_manipSimulator->GetLinkEndX(numJoints) - m_manipSimulator->GetGoalCenterX();
 	double fkY = m_manipSimulator->GetLinkEndY(numJoints)- m_manipSimulator->GetGoalCenterY();
+
+	double distance =sqrt(pow(fkX,2)+pow(fkX,2));
+	fkX/=distance;
+	fkY/=distance;
 	
 	for(int i=0;i<numJoints+1;i++)
 	{
