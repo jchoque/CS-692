@@ -79,11 +79,12 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		*           \ Oiy /
 		* Where Oiy and Oix are the closest point to this vertex on obstacle i
 		 */
-		totalRepulsiveForce[0][0] = totalRepulsiveForce[1][0] = 0;
+		double vertexRepulsiveForce[2][1];
+		vertexRepulsiveForce[0][0] = vertexRepulsiveForce[1][0] = 0;
 		for (int obsIdx = 0; obsIdx < m_simulator->GetNrObstacles(); obsIdx++){
 			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, fk[0][0], fk[1][0]);
-			totalRepulsiveForce[0][0] += (point.m_x - fk[0][0]);
-			totalRepulsiveForce[1][0] += (point.m_y - fk[1][0]);
+			vertexRepulsiveForce[0][0] += (point.m_x - fk[0][0]);
+			vertexRepulsiveForce[1][0] += (point.m_y - fk[1][0]);
 		}
 		
 		/* Calculate the Jacobian
@@ -120,18 +121,10 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			}
 		}
 
-		double  repulsiveResult[2][1];
-		memset(repulsiveResult, 0, sizeof(repulsiveResult[0][0]) * 2 * 1);
 		for(int i = 0; i < 3; i++)
 		{
-			repulsiveResult[0][0] += (totalRepulsiveForce[0][0]*jacobian[0][i]);
-			repulsiveResult[1][0] += (totalRepulsiveForce[1][0]*jacobian[1][i]);
-		}
-
-		for(int i = 0; i < 3; i++)
-		{
-			totalRepulsiveForce[0][0] += repulsiveResult[0][0];
-			totalRepulsiveForce[1][0] += repulsiveResult[1][0];
+			totalRepulsiveForce[0][0] += (vertexRepulsiveForce[0][0]*jacobian[0][i]);
+			totalRepulsiveForce[1][0] += (vertexRepulsiveForce[1][0]*jacobian[1][i]);
 		}
 
 	}
@@ -148,7 +141,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		move.m_dtheta = -(PI/64);
 	}
 
-	if (totalRepulsiveForce[0][0] < totalAttractiveForce[0][0]  || totalRepulsiveForce[1][0] < totalAttractiveForce[0][1]){
+	if (totalRepulsiveForce[0][0] > totalAttractiveForce[0][0]  || totalRepulsiveForce[1][0] > totalAttractiveForce[0][1]){
 		repScale = 0.002;
 	}
 	cout << "Attrac\t" << totalAttractiveForce[0][0] << "\t" << totalAttractiveForce[0][1] << "\t::\t" 
@@ -158,7 +151,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	move.m_dy = -(xyScale*totalAttractiveForce[0][1] + repScale*totalRepulsiveForce[1][0]);
 
 	// Go in slow mode
-	Sleep(150);
+	Sleep(110);
 	}
 	return move;
 }
