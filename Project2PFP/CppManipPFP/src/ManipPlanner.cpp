@@ -21,13 +21,9 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 	double fkX = m_manipSimulator->GetLinkEndX(numJoints) - m_manipSimulator->GetGoalCenterX();
 	double fkY = m_manipSimulator->GetLinkEndY(numJoints)- m_manipSimulator->GetGoalCenterY();
 	
-	std::vector<Jacobian2x2>allJacos;
-	double aJaco[2][1];
 	for(int i=0;i<numJoints+1;i++)
 	{
 		Jacobian2x2 aJaco(0,0);
-		//aJaco[0][0] = -m_manipSimulator->GetLinkEndY(numJoints) + m_manipSimulator->GetLinkStartY(i);
-		//aJaco[1][0] = m_manipSimulator->GetLinkEndX(numJoints) -  m_manipSimulator->GetLinkStartX(i);
 
 		aJaco.jacoX = -m_manipSimulator->GetLinkEndY(numJoints) + m_manipSimulator->GetLinkStartY(i);
 		aJaco.jacoY = m_manipSimulator->GetLinkEndX(numJoints) -  m_manipSimulator->GetLinkStartX(i);
@@ -35,24 +31,21 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 		double jacoMultiply = (fkX *aJaco.jacoX) + (fkY * aJaco.jacoY);
 
 		//allLinksDeltaTheta[i] = -( jacoMultiply / (abs(jacoMultiply)) * thetaScale);
-		allLinksDeltaTheta[i] = -jacoMultiply;
-		allJacos.push_back(aJaco);
+		allLinksDeltaTheta[i] = jacoMultiply;
+		
 	}
 
 	//Now compute repulsive forces
 	CalculateRepulsion(allLinksDeltaTheta);
 	
-	for(int j=0;j<m_manipSimulator->GetNrLinks();j++) 
+	double mag = norm(allLinksDeltaTheta);
+
+	for(int i=0;i<m_manipSimulator->GetNrLinks();i++)
 	{
-		if(allLinksDeltaTheta[j] != 0)
-		{
-			allLinksDeltaTheta[j] = allLinksDeltaTheta[j]/abs(allLinksDeltaTheta[j]) *thetaScale;
-		}
+		allLinksDeltaTheta[i] = -0.01 * allLinksDeltaTheta[i] / mag;
+		//allLinksDeltaTheta[i] =allLinksDeltaTheta[i] / mag;
 	}
 
-
-
-	
 	printf("Delta theta is: %4.3f\n", allLinksDeltaTheta[numJoints]);
 
 	//Now multiply out
@@ -80,11 +73,24 @@ void ManipPlanner::ConfigurationMove(double allLinksDeltaTheta[])
 				double uRepX = deltaX/distance;
 				double uRepY = deltaY/distance;
 				
-				double jacoMultiply = 2*(uRepX *aJaco.jacoX) + (uRepY * aJaco.jacoY);
+				double jacoMultiply = (uRepX *aJaco.jacoX) + (uRepY * aJaco.jacoY);
 				allLinksDeltaTheta[j] -=jacoMultiply;
 			}
 
 		}
 	}
+ }
+
+ double ManipPlanner::norm(double allLinksDeltaTheta[])
+ {
+		double sum = 0;
+
+		for(int i=0;i<m_manipSimulator->GetNrLinks(); i++)
+		{
+			sum+=abs(allLinksDeltaTheta[i]);
+		}
+
+		return sum;
+
  }
 
