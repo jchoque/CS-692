@@ -17,17 +17,6 @@ struct RigidBodyMove
 	}
 };
 
-
-struct RobotJacobian
-{
-	double mJacobian[2][3];
-
-};
-
-struct GoalGradient
-{
-	double mGoalGradient[2];
-};
 class RigidBodyPlanner
 {
 public:
