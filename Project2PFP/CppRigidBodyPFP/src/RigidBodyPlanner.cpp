@@ -3,6 +3,7 @@
 #include <math.h>
 #include <windows.h>
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -51,6 +52,8 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	{
 		double pointX = robotVertices[2*idx];
 		double pointY = robotVertices[2*idx+1];
+		// Used for normalizing calculation
+		double goalDistance = sqrt(pow(pointX - goalX, 2) + pow(pointY - goalY, 2));
 		
 		/* Calculate the Forward Kinematics for this vertex j
 		*       / xj cos(theta) - yj sin(theta) + x  \
@@ -59,6 +62,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		* Where j represents the index of the current vertice on the robot
 		 */
 		double fk[2][1];
+		// Normalize these x/y values?
 		fk[0][0] = (pointX * cos(configTheta)) - (pointY*sin(configTheta)) + (configX);
 		fk[1][0] = (pointX * sin(configTheta)) + (pointY*cos(configTheta)) + (configY);
 		
@@ -69,8 +73,8 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		*
 		 */
 		double attractiveForce[2][1];
-		attractiveForce[0][0] = fk[0][0]-goalX;
-		attractiveForce[1][0] = fk[1][0]-goalY;
+		attractiveForce[0][0] = fk[0][0]/goalDistance-goalX;
+		attractiveForce[1][0] = fk[1][0]/goalDistance-goalY;
 
 		/* Calculate the repulsion force for all obstacles with respect to
 		* this vertex
@@ -80,11 +84,15 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		* Where Oiy and Oix are the closest point to this vertex on obstacle i
 		 */
 		double vertexRepulsiveForce[2][1];
-		vertexRepulsiveForce[0][0] = vertexRepulsiveForce[1][0] = 0;
+		memset(vertexRepulsiveForce, 0, sizeof(vertexRepulsiveForce[0][0]) * 2 * 1);
 		for (int obsIdx = 0; obsIdx < m_simulator->GetNrObstacles(); obsIdx++){
 			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, fk[0][0], fk[1][0]);
-			vertexRepulsiveForce[0][0] += (point.m_x - fk[0][0]);
-			vertexRepulsiveForce[1][0] += (point.m_y - fk[1][0]);
+			// Used for normalizing calculation
+			double obsDistance = sqrt(pow(pointX - point.m_x, 2) + pow(pointY - point.m_y, 2));	
+
+			// Normalize these x/y values?
+			vertexRepulsiveForce[0][0] += (point.m_x/obsDistance - fk[0][0]);
+			vertexRepulsiveForce[1][0] += (point.m_y/obsDistance - fk[1][0]);
 		}
 		
 		/* Calculate the Jacobian
@@ -102,6 +110,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		
 		// Calculate the final values for this vertex based on prior Uatt, Urep, Jacobian, and FK
 		double  attractiveResult[1][3];
+		memset(attractiveResult, 0, sizeof(attractiveResult[0][0]) * 1 * 3);
 		for(int i = 0; i < 3; i++)
 		{
 			attractiveResult[0][i] = ( (attractiveForce[0][0]*jacobian[0][i]) + (attractiveForce[1][0]*jacobian[1][i]) );
@@ -116,6 +125,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		}
 
 		for (int i = 0; i < 2; i++){
+
 			for (int j = 0; j < 3; j++){
 				totalJacobian[i][j] += jacobian[i][j];
 			}
@@ -132,124 +142,24 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	double thetaScale = PI/64;
 	double xyScale = .001;
 	double repScale = .001;
-	double thetaValue = (totalAttractiveForce[0][2]/abs(totalAttractiveForce[0][2]));
+	double thetaValue = ((totalAttractiveForce[0][2]/abs(totalAttractiveForce[0][2])) > 0) ? 
+		move.m_dtheta = PI/64: move.m_dtheta = -PI/64;;
 
-	if (thetaValue > 0){
-		move.m_dtheta = PI/64;
+	if (totalRepulsiveForce[0][0] > totalAttractiveForce[0][0] &&
+		totalRepulsiveForce[1][0] > totalAttractiveForce[1][0]){
+		repScale = 0.004;
+		xyScale = 0.0009;
 	}
-	else if (thetaValue < 0){
-		move.m_dtheta = -(PI/64);
-	}
-
-	if (totalRepulsiveForce[0][0] > totalAttractiveForce[0][0]  || totalRepulsiveForce[1][0] > totalAttractiveForce[0][1]){
-		repScale = 0.002;
-	}
-	cout << "Attrac\t" << totalAttractiveForce[0][0] << "\t" << totalAttractiveForce[0][1] << "\t::\t" 
-	 	 << "Repuls\t" << totalRepulsiveForce[0][0]  << "\t" << totalRepulsiveForce[1][0]  << endl;
+	
+	cout << "Att\t" << setprecision(4) << totalAttractiveForce[0][0] << "\t" << setprecision(4) << totalAttractiveForce[0][1] << "\t::\t" 
+	 	 << "Rep\t" << setprecision(4) << totalRepulsiveForce[0][0]  << "\t" << setprecision(4) << totalRepulsiveForce[1][0]  << "\t"
+		 << "repScale\t" << repScale << endl;
 
 	move.m_dx = -(xyScale*totalAttractiveForce[0][0] + repScale*totalRepulsiveForce[0][0]);
 	move.m_dy = -(xyScale*totalAttractiveForce[0][1] + repScale*totalRepulsiveForce[1][0]);
 
 	// Go in slow mode
-	Sleep(110);
+	//Sleep(100);
 	}
 	return move;
 }
-
-/*
-RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
-    
-{
-    RigidBodyMove move;
-	double robotX = m_simulator->GetRobotX();
-	double robotY = m_simulator->GetRobotY();
-	double robotTheta = m_simulator->GetRobotTheta();
-	int numberVert = m_simulator->GetNrRobotVertices();
-	vector<RobotJacobian> robotJacobian;
-	vector<GoalGradient> goalGradient;
-	const double *robotVertices = m_simulator->GetRobotVertices();
-	RobotJacobian roboJaco;
-	GoalGradient aGrad;
-	double goalX = m_simulator->GetGoalCenterX();
-	double goalY = m_simulator->GetGoalCenterY();
-
-	// Calculate Jacobian for the center of the robot
-	roboJaco.mJacobian[0][0] = roboJaco.mJacobian[1][1] =1;
-	roboJaco.mJacobian[0][1] = roboJaco.mJacobian[1][0] =0;
-	roboJaco.mJacobian[0][2] = -1 * robotX * sin(robotTheta) - robotY * cos(robotTheta);
-	roboJaco.mJacobian[1][2] = robotX * cos(robotTheta) - robotY * sin(robotTheta);
-
-	// Not sure if we'll need the center of the robots jacoby but I'll store it anyways
-	robotJacobian.push_back(roboJaco);
-
-	// Calculate the gradient for the center of the robot
-	// Maybe this is supposed to be FK instead of the simple calculation below
-	aGrad.mGoalGradient[0] = robotX - goalX;
-	aGrad.mGoalGradient[1] = robotY - goalY;
-	goalGradient.push_back(aGrad);
-
-	// Loop through all vertices on this object and get calculate the Jacobian
-	double vertX;
-	double vertY;
-	double obstX;
-	double obstY;
-	double fk[2];
-	double uAtt[2];
-	double uRep[2];
-	double scale = .01;  // We need to figure out a good scaling
-	
-	//These are the various scales
-	double attrScaleXY = .25;
-	double attrScaleTheta =1;
-	double repScaleXY = .5;
-	double repScaleTheta =PI/4;
-
-	for (int idx = 0; idx < numberVert; idx++){
-		RobotJacobian aJacoby;
-		vertX = robotVertices[idx * 2];
-		vertY = robotVertices[idx * 2 + 1];
-
-		//Calculate the Jacobian (step 2 from notes)
-		aJacoby.mJacobian[0][0] = aJacoby.mJacobian[1][1] = 1;
-		aJacoby.mJacobian[0][1] = aJacoby.mJacobian[1][0] = 0;
-		aJacoby.mJacobian[0][2] = -1 * vertX * sin(robotTheta) - vertY * cos(robotTheta);
-		aJacoby.mJacobian[1][2] = vertX * cos(robotTheta) - vertY * sin(robotTheta);
-
-		robotJacobian.push_back(aJacoby);
-
-		// Calculate the gradient to the goal (step 1 from notes)
-		// First calculate Forward Kinematic for this vertex on robot
-		fk[0] = vertX * cos(robotTheta) - vertY * sin(robotTheta) + robotX;
-		fk[1] = vertX * sin(robotTheta) + vertY * cos(robotTheta) + robotY;
-
-		// Next calculate the attractive force
-		uAtt[0] = (fk[0] - goalX) * scale;
-		uAtt[1] = (fk[1] - goalY) * scale; 
-
-		// Now calculate the repulsion factor for all obstacles with respect to
-		// this vertex
-		uRep[0] = uRep[1] = 0;
-		for (int obsIdx = 0; obsIdx < m_simulator->GetNrObstacles(); obsIdx++){
-			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, vertX, vertY);
-			uRep[0] += scale * (point.m_x - fk[0]);
-			uRep[1] += scale * (point.m_y - fk[1]);
-		}
-
-
-		//Multiply the Jacobian with the attractive force and add it
-		move.m_dx -= attrScaleXY*( (aJacoby.mJacobian[0][0] *uAtt[0]) + (aJacoby.mJacobian[1][0]*uAtt[1]) );
-		move.m_dy -= attrScaleXY*( (aJacoby.mJacobian[0][1] *uAtt[0]) + (aJacoby.mJacobian[1][1]*uAtt[1]) );
-		move.m_dtheta -= attrScaleTheta*( (aJacoby.mJacobian[0][2] *uAtt[0]) + (aJacoby.mJacobian[1][2]*uAtt[1]) );
-
-		//Multiply the Jacobian with the repulsive force and add it
-		move.m_dx += repScaleXY*( (aJacoby.mJacobian[0][0] *uRep[0]) + (aJacoby.mJacobian[1][0]*uRep[1]) );
-		move.m_dy += repScaleXY*( (aJacoby.mJacobian[0][1] *uRep[0]) + (aJacoby.mJacobian[1][1]*uRep[1]) );
-		move.m_dtheta += repScaleTheta *( (aJacoby.mJacobian[0][2] *uRep[0]) + (aJacoby.mJacobian[1][2]*uRep[1]) );
-	}
-
-	double degrees = move.m_dtheta *180/PI;
-	printf("Moving to[%4.3f, %4.3f, %4.3f] with heading[%4.3f]\n",move.m_dx, move.m_dy, degrees);
-	Sleep(1);
-    return move;
-}
-*/
