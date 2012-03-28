@@ -36,13 +36,13 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	if (!m_simulator->HasRobotReachedGoal()) {
 
 	//Total sum of the different forces
-	double totalAttractiveForce[1][3];
-	double totalRepulsiveForce[2][1];
+	double totalAttractiveForce[3];
+	double totalRepulsiveForce[2];
 	double totalJacobian[2][3];
 
 	//Initialize the counters
-	memset(totalAttractiveForce, 0, sizeof(totalAttractiveForce[0][0]) * 1 * 3);
-	memset(totalRepulsiveForce, 0, sizeof(totalRepulsiveForce[0][0]) * 2 * 1);
+	memset(totalAttractiveForce, 0, sizeof(totalAttractiveForce[0]) * 1 * 3);
+	memset(totalRepulsiveForce, 0, sizeof(totalRepulsiveForce[0]) * 2 * 1);
 	memset(totalJacobian, 0, sizeof(totalJacobian[0][0]) * 2 * 3);
 
 	const double *robotVertices = m_simulator->GetRobotVertices();
@@ -83,16 +83,16 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		*           \ Oiy /
 		* Where Oiy and Oix are the closest point to this vertex on obstacle i
 		 */
-		double vertexRepulsiveForce[2][1];
-		memset(vertexRepulsiveForce, 0, sizeof(vertexRepulsiveForce[0][0]) * 2 * 1);
+		double vertexRepulsiveForce[2];
+		memset(vertexRepulsiveForce, 0, sizeof(vertexRepulsiveForce[0]) * 2 * 1);
 		for (int obsIdx = 0; obsIdx < m_simulator->GetNrObstacles(); obsIdx++){
 			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, fk[0][0], fk[1][0]);
 			// Used for normalizing calculation
 			double obsDistance = sqrt(pow(pointX - point.m_x, 2) + pow(pointY - point.m_y, 2));	
 
 			// Normalize these x/y values?
-			vertexRepulsiveForce[0][0] += (point.m_x/obsDistance - fk[0][0]);
-			vertexRepulsiveForce[1][0] += (point.m_y/obsDistance - fk[1][0]);
+			vertexRepulsiveForce[0] += (point.m_x/obsDistance - fk[0][0]);
+			vertexRepulsiveForce[1] += (point.m_y/obsDistance - fk[1][0]);
 		}
 		
 		/* Calculate the Jacobian
@@ -109,18 +109,18 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		jacobian[1][2] = (pointX * cos(configTheta)) - (pointY *sin(configTheta));
 		
 		// Calculate the final values for this vertex based on prior Uatt, Urep, Jacobian, and FK
-		double  attractiveResult[1][3];
-		memset(attractiveResult, 0, sizeof(attractiveResult[0][0]) * 1 * 3);
+		double  attractiveResult[3];
+		memset(attractiveResult, 0, sizeof(attractiveResult[0]) * 1 * 3);
 		for(int i = 0; i < 3; i++)
 		{
-			attractiveResult[0][i] = ( (attractiveForce[0][0]*jacobian[0][i]) + (attractiveForce[1][0]*jacobian[1][i]) );
+			attractiveResult[i] = ( (attractiveForce[0][0]*jacobian[0][i]) + (attractiveForce[1][0]*jacobian[1][i]) );
 		}
 		
 		for(int i=0;i<1;i++)
 		{
 			for(int j=0;j<3;j++)
 			{
-				totalAttractiveForce[i][j] +=attractiveResult[i][j];
+				totalAttractiveForce[j] +=attractiveResult[j];
 			}
 		}
 
@@ -133,8 +133,8 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 
 		for(int i = 0; i < 3; i++)
 		{
-			totalRepulsiveForce[0][0] += (vertexRepulsiveForce[0][0]*jacobian[0][i]);
-			totalRepulsiveForce[1][0] += (vertexRepulsiveForce[1][0]*jacobian[1][i]);
+			totalRepulsiveForce[0] += (vertexRepulsiveForce[0]*jacobian[0][i]);
+			totalRepulsiveForce[1] += (vertexRepulsiveForce[1]*jacobian[1][i]);
 		}
 
 	}
@@ -142,21 +142,21 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	double thetaScale = PI/64;
 	double xyScale = .001;
 	double repScale = .001;
-	double thetaValue = ((totalAttractiveForce[0][2]/abs(totalAttractiveForce[0][2])) > 0) ? 
+	double thetaValue = ((totalAttractiveForce[2]/abs(totalAttractiveForce[2])) > 0) ? 
 		move.m_dtheta = PI/64: move.m_dtheta = -PI/64;;
 
-	if (totalRepulsiveForce[0][0] > totalAttractiveForce[0][0] &&
-		totalRepulsiveForce[1][0] > totalAttractiveForce[1][0]){
+	if (totalRepulsiveForce[0] > totalAttractiveForce[0] &&
+		totalRepulsiveForce[1] > totalAttractiveForce[1]){
 		repScale = 0.004;
 		xyScale = 0.0009;
 	}
 	
-	cout << "Att\t" << setprecision(4) << totalAttractiveForce[0][0] << "\t" << setprecision(4) << totalAttractiveForce[0][1] << "\t::\t" 
-	 	 << "Rep\t" << setprecision(4) << totalRepulsiveForce[0][0]  << "\t" << setprecision(4) << totalRepulsiveForce[1][0]  << "\t"
+	cout << "Att\t" << setprecision(4) << totalAttractiveForce[0] << "\t" << setprecision(4) << totalAttractiveForce[1] << "\t::\t" 
+	 	 << "Rep\t" << setprecision(4) << totalRepulsiveForce[0]  << "\t" << setprecision(4) << totalRepulsiveForce[1]  << "\t"
 		 << "repScale\t" << repScale << endl;
 
-	move.m_dx = -(xyScale*totalAttractiveForce[0][0] + repScale*totalRepulsiveForce[0][0]);
-	move.m_dy = -(xyScale*totalAttractiveForce[0][1] + repScale*totalRepulsiveForce[1][0]);
+	move.m_dx = -(xyScale*totalAttractiveForce[0] + repScale*totalRepulsiveForce[0]);
+	move.m_dy = -(xyScale*totalAttractiveForce[1] + repScale*totalRepulsiveForce[1]);
 
 	// Go in slow mode
 	//Sleep(100);
