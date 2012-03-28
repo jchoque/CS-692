@@ -3,6 +3,19 @@
 
 #include "ManipSimulator.hpp"
 
+
+struct Jacobian2x2
+{
+	Jacobian2x2(double pJacox, double pJacoy)
+	{
+		jacoX  = pJacox;
+		jacoY  = pJacoy;
+	}
+    double jacoX;
+    double jacoY;    
+};
+
+
 class ManipPlanner
 {
 public:
@@ -37,7 +50,8 @@ public:
     
         
 protected:    
-    
+    void CalculateRepulsion(double allLinksDeltaTheta[]);
+	double norm(double allLinksDeltaTheta[]);
     ManipSimulator  *m_manipSimulator;
 };
 
