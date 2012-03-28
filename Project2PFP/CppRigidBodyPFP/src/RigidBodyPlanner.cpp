@@ -86,7 +86,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		double vertexRepulsiveForce[2];
 		memset(vertexRepulsiveForce, 0, sizeof(vertexRepulsiveForce[0]) * 2 * 1);
 		for (int obsIdx = 0; obsIdx < m_simulator->GetNrObstacles(); obsIdx++){
-			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, fk[0][0], fk[1][0]);
+			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, pointX, pointY);
 			// Used for normalizing calculation
 			double obsDistance = sqrt(pow(pointX - point.m_x, 2) + pow(pointY - point.m_y, 2));	
 
@@ -131,6 +131,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			}
 		}
 
+		//BRIAN CHECK THIS! INDEX 2 IS USED IN THETA CALCULATIONS!
 		for(int i = 0; i < 3; i++)
 		{
 			totalRepulsiveForce[0] += (vertexRepulsiveForce[0]*jacobian[0][i]);
