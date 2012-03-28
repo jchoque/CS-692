@@ -90,6 +90,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			//The closest point should pass in the pointX, pointY
 			//Point point = m_simulator->ClosestPointOnObstacle(obsIdx, fk[0][0], fk[1][0]);
 			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, pointX, pointY);
+			//REALLY?
 			// Used for normalizing calculation
 			double obsDistance = sqrt(pow(pointX - point.m_x, 2) + pow(pointY - point.m_y, 2));	
 
