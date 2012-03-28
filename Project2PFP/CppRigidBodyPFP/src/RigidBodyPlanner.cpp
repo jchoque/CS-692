@@ -86,7 +86,10 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		double vertexRepulsiveForce[2];
 		memset(vertexRepulsiveForce, 0, sizeof(vertexRepulsiveForce[0]) * 2 * 1);
 		for (int obsIdx = 0; obsIdx < m_simulator->GetNrObstacles(); obsIdx++){
-			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, fk[0][0], fk[1][0]);
+
+			//The closest point should pass in the pointX, pointY
+			//Point point = m_simulator->ClosestPointOnObstacle(obsIdx, fk[0][0], fk[1][0]);
+			Point point = m_simulator->ClosestPointOnObstacle(obsIdx, pointX, pointY);
 			// Used for normalizing calculation
 			double obsDistance = sqrt(pow(pointX - point.m_x, 2) + pow(pointY - point.m_y, 2));	
 
@@ -116,6 +119,8 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			attractiveResult[i] = ( (attractiveForce[0][0]*jacobian[0][i]) + (attractiveForce[1][0]*jacobian[1][i]) );
 		}
 		
+
+		//CHRIS: What is this line doing?
 		for(int i=0;i<1;i++)
 		{
 			for(int j=0;j<3;j++)
@@ -124,6 +129,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			}
 		}
 
+		//CHRIS: ALso what is this? 
 		for (int i = 0; i < 2; i++){
 
 			for (int j = 0; j < 3; j++){
@@ -131,6 +137,8 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			}
 		}
 
+
+		//BRIAN: NEED TO UPDATE THIS. IT LOOKS LIKE THE THETA VALUES IS BEING ADDED TO THE FORCES
 		for(int i = 0; i < 3; i++)
 		{
 			totalRepulsiveForce[0] += (vertexRepulsiveForce[0]*jacobian[0][i]);
@@ -145,18 +153,20 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	double thetaValue = ((totalAttractiveForce[2]/abs(totalAttractiveForce[2])) > 0) ? 
 		move.m_dtheta = PI/64: move.m_dtheta = -PI/64;;
 
+	/*
 	if (totalRepulsiveForce[0]  + totalRepulsiveForce[1] < 
 		totalAttractiveForce[0] + totalAttractiveForce[1]){
 		repScale = 0.003;
 		xyScale = 0.0009;
 	}
+	*/
 	
 	cout << "Att\t" << setprecision(4) << totalAttractiveForce[0] << "\t" << setprecision(4) << totalAttractiveForce[1] << "\t::\t" 
 	 	 << "Rep\t" << setprecision(4) << totalRepulsiveForce[0]  << "\t" << setprecision(4) << totalRepulsiveForce[1]  << "\t"
 		 << "repScale\t" << repScale << endl;
 
-	move.m_dx = -(xyScale*totalAttractiveForce[0] - repScale*totalRepulsiveForce[0]);
-	move.m_dy = -(xyScale*totalAttractiveForce[1] - repScale*totalRepulsiveForce[1]);
+	move.m_dx = (-xyScale*totalAttractiveForce[0] + repScale*totalRepulsiveForce[0]);
+	move.m_dy = (-xyScale*totalAttractiveForce[1] + repScale*totalRepulsiveForce[1]);
 
 	// Go in slow mode
 	Sleep(100);
