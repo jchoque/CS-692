@@ -73,8 +73,8 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		*
 		 */
 		double attractiveForce[2][1];
-		attractiveForce[0][0] = fk[0][0]/goalDistance-goalX;
-		attractiveForce[1][0] = fk[1][0]/goalDistance-goalY;
+		attractiveForce[0][0] = pointX - goalX;
+		attractiveForce[1][0] = pointY - goalY;
 
 		/* Calculate the repulsion force for all obstacles with respect to
 		* this vertex
@@ -91,8 +91,8 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			double obsDistance = sqrt(pow(pointX - point.m_x, 2) + pow(pointY - point.m_y, 2));	
 
 			// Normalize these x/y values?
-			vertexRepulsiveForce[0] += (point.m_x/obsDistance - fk[0][0]);
-			vertexRepulsiveForce[1] += (point.m_y/obsDistance - fk[1][0]);
+			vertexRepulsiveForce[0] += (pointX - point.m_x);
+			vertexRepulsiveForce[1] += (pointY - point.m_y);
 		}
 		
 		/* Calculate the Jacobian
@@ -145,9 +145,9 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	double thetaValue = ((totalAttractiveForce[2]/abs(totalAttractiveForce[2])) > 0) ? 
 		move.m_dtheta = PI/64: move.m_dtheta = -PI/64;;
 
-	if (totalRepulsiveForce[0] > totalAttractiveForce[0] &&
-		totalRepulsiveForce[1] > totalAttractiveForce[1]){
-		repScale = 0.004;
+	if (totalRepulsiveForce[0]  + totalRepulsiveForce[1] < 
+		totalAttractiveForce[0] + totalAttractiveForce[1]){
+		repScale = 0.003;
 		xyScale = 0.0009;
 	}
 	
@@ -155,11 +155,11 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 	 	 << "Rep\t" << setprecision(4) << totalRepulsiveForce[0]  << "\t" << setprecision(4) << totalRepulsiveForce[1]  << "\t"
 		 << "repScale\t" << repScale << endl;
 
-	move.m_dx = -(xyScale*totalAttractiveForce[0] + repScale*totalRepulsiveForce[0]);
-	move.m_dy = -(xyScale*totalAttractiveForce[1] + repScale*totalRepulsiveForce[1]);
+	move.m_dx = -(xyScale*totalAttractiveForce[0] - repScale*totalRepulsiveForce[0]);
+	move.m_dy = -(xyScale*totalAttractiveForce[1] - repScale*totalRepulsiveForce[1]);
 
 	// Go in slow mode
-	//Sleep(100);
+	Sleep(100);
 	}
 	return move;
 }
