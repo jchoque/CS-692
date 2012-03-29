@@ -75,6 +75,10 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			double attractiveForce[2];
 			attractiveForce[0] = pointX - goalX;
 			attractiveForce[1] = pointY - goalY;
+
+			double distance = sqrt(pow(attractiveForce[0],2) + pow(attractiveForce[1],2));
+			attractiveForce[0]/=distance;
+			attractiveForce[1]/=distance;
 			
 			/* Calculate the repulsion force for all obstacles with respect to
 			* this vertex
@@ -85,6 +89,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			*/
 			double vertexRepulsiveForce[2];
 			memset(vertexRepulsiveForce, 0, sizeof(vertexRepulsiveForce[0]) * 2 * 1);
+			
 			for (int obsIdx = 0; obsIdx < m_simulator->GetNrObstacles(); obsIdx++){
 				Point point = m_simulator->ClosestPointOnObstacle(obsIdx, pointX, pointY);
 				// Used for normalizing calculation
@@ -93,6 +98,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 				// Normalize these x/y values?
 				vertexRepulsiveForce[0] += (pointX - point.m_x);
 				vertexRepulsiveForce[1] += (pointY - point.m_y);
+				
 			}
 
 			/* Calculate the Jacobian
@@ -124,13 +130,6 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 				}
 			}
 
-			for (int i = 0; i < 2; i++){
-
-				for (int j = 0; j < 3; j++){
-					totalJacobian[i][j] += jacobian[i][j];
-				}
-			}
-
 			for(int i = 0; i < 2; i++)
 			{
 				totalRepulsiveForce[0] += (vertexRepulsiveForce[0]*jacobian[0][i]);
@@ -144,24 +143,37 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		}
 
 		double thetaScale = PI/64;
-		double xyScale = .001;
-		double repScale = .001;
+		double xyScale = .01;
+		double repScale = .01;
 		double thetaValue = totalTheta < 0 ? 
 			move.m_dtheta = PI/64: move.m_dtheta = -PI/64;;
 
-		if (abs(totalRepulsiveForce[0])  + abs(totalRepulsiveForce[1]) < 10
-			){
-				repScale = .004;
-		} else if (abs(totalAttractiveForce[0])  + abs(totalAttractiveForce[1]) > 80) {
-			xyScale = 0.002;
+		//if (abs(totalRepulsiveForce[0])  + abs(totalRepulsiveForce[1]) < 10
+		//	){
+		//		repScale = .004;
+		//} else if (abs(totalAttractiveForce[0])  + abs(totalAttractiveForce[1]) > 80) {
+		//	xyScale = .004;
+		//}
+//
+//		cout << "Att\t" << setprecision(4) << totalAttractiveForce[0] << "\t" << setprecision(4) << totalAttractiveForce[1] << "\t" 
+//			<< "Rep\t" << setprecision(4) << totalRepulsiveForce[0]  << "\t" << setprecision(4) << totalRepulsiveForce[1]  << "\t"
+//			<< "repScale\t" << repScale << "\ttheta\t" << totalTheta << endl;
+
+		double repDistance = sqrt(pow(totalRepulsiveForce[0],2)+pow(totalRepulsiveForce[1],2));
+		
+		if(repDistance >0) {
+		totalRepulsiveForce[0]/=repDistance;
+		totalRepulsiveForce[1]/=repDistance;
 		}
 
-		cout << "Att\t" << setprecision(4) << totalAttractiveForce[0] << "\t" << setprecision(4) << totalAttractiveForce[1] << "\t" 
-			<< "Rep\t" << setprecision(4) << totalRepulsiveForce[0]  << "\t" << setprecision(4) << totalRepulsiveForce[1]  << "\t"
-			<< "repScale\t" << repScale << "\ttheta\t" << totalTheta << endl;
-
+		//totalRepulsiveForce[0] = totalRepulsiveForce[1] = 0;
+		cout<<"CHRIS SAYS: "<<totalRepulsiveForce[0]<<endl;
 		move.m_dx = -(xyScale*totalAttractiveForce[0] - repScale*totalRepulsiveForce[0]);
-		move.m_dy = -(xyScale*totalAttractiveForce[1] - repScale*totalRepulsiveForce[1]);
+		move.m_dy = -(xyScale*totalAttractiveForce[1] -repScale*totalRepulsiveForce[1]);
+	}
+	else
+	{
+		cout<<"DONE!"<<endl;
 	}
 	return move;
 }
