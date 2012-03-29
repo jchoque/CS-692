@@ -46,7 +46,7 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		memset(totalJacobian, 0, sizeof(totalJacobian[0][0]) * 2 * 3);
 
 		const double *robotVertices = m_simulator->GetRobotVertices();
-
+		
 		// Loop over all of the vertices on the robot
 		for(int idx = 0; idx<m_simulator->GetNrRobotVertices(); idx++)
 		{
@@ -54,17 +54,6 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 			double pointY = robotVertices[2*idx+1];
 			// Used for normalizing calculation
 			double goalDistance = sqrt(pow(pointX - goalX, 2) + pow(pointY - goalY, 2));
-
-			/* Calculate the Forward Kinematics for this vertex j
-			*       / xj cos(theta) - yj sin(theta) + x  \
-			* FKj = |                                      |
-			*       \ xj sin(theta) + yj cos(theta) + y  /
-			* Where j represents the index of the current vertice on the robot
-			*/
-			double fk[2];
-			// Normalize these x/y values?
-			fk[0] = (pointX * cos(configTheta)) - (pointY*sin(configTheta)) + (configX);
-			fk[1] = (pointX * sin(configTheta)) + (pointY*cos(configTheta)) + (configY);
 
 			/* Calculate the attractive force for this vertex j
 			*                / Goalx \
@@ -148,17 +137,30 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		double thetaValue = totalTheta < 0 ? 
 			move.m_dtheta = PI/64: move.m_dtheta = -PI/64;;
 
-		if (abs(totalRepulsiveForce[0])  + abs(totalRepulsiveForce[1]) < 10
-			){
+		if (abs(totalRepulsiveForce[0])  + abs(totalRepulsiveForce[1]) < 5)
+		{
+				repScale = .07;
+		}
+		if (abs(totalRepulsiveForce[0])  + abs(totalRepulsiveForce[1]) < 20)
+		{
+			// If we have more than 4 vertices then we are probably a complex shape so repulse harder
+			if (m_simulator->GetNrRobotVertices() > 4)
+				repScale = .05;
+			else
+				repScale = 0.03;
+		}
+		else if (abs(totalRepulsiveForce[0])  + abs(totalRepulsiveForce[1]) < 35 )
+		{
+			// If we have more than 4 vertices then we are probably a complex shape so repulse harder
+			if (m_simulator->GetNrRobotVertices() > 4)
 				repScale = .03;
-		} //else if (abs(totalAttractiveForce[0])  + abs(totalAttractiveForce[1]) > 80) {
-			//xyScale = .004;
-		//}
-//
-//		cout << "Att\t" << setprecision(4) << totalAttractiveForce[0] << "\t" << setprecision(4) << totalAttractiveForce[1] << "\t" 
-//			<< "Rep\t" << setprecision(4) << totalRepulsiveForce[0]  << "\t" << setprecision(4) << totalRepulsiveForce[1]  << "\t"
-//			<< "repScale\t" << repScale << "\ttheta\t" << totalTheta << endl;
+		} 
 
+/*		
+		cout << "Att\t" << setprecision(4) << totalAttractiveForce[0] << "\t" << setprecision(4) << totalAttractiveForce[1] << "\t" 
+			<< "Rep\t" << setprecision(4) << totalRepulsiveForce[0]  << "\t" << setprecision(4) << totalRepulsiveForce[1]  << "\t"
+			<< "repScale\t" << repScale << "\ttheta\t" << totalTheta << endl;
+*/
 		double repDistance = sqrt(pow(totalRepulsiveForce[0],2)+pow(totalRepulsiveForce[1],2));
 		
 		if(repDistance >0) {
@@ -167,9 +169,9 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		}
 
 		//totalRepulsiveForce[0] = totalRepulsiveForce[1] = 0;
-		cout<<"CHRIS SAYS: "<<totalRepulsiveForce[0]<<endl;
+//		cout<<"CHRIS SAYS: "<<totalRepulsiveForce[0]<<endl;
 		move.m_dx = -(xyScale*totalAttractiveForce[0] - repScale*totalRepulsiveForce[0]);
-		move.m_dy = -(xyScale*totalAttractiveForce[1] -repScale*totalRepulsiveForce[1]);
+		move.m_dy = -(xyScale*totalAttractiveForce[1] - repScale*totalRepulsiveForce[1]);
 	}
 	else
 	{
