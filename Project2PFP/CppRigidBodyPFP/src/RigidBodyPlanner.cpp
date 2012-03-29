@@ -148,11 +148,11 @@ RigidBodyMove RigidBodyPlanner::ConfigurationMove(void)
 		double thetaValue = totalTheta < 0 ? 
 			move.m_dtheta = PI/64: move.m_dtheta = -PI/64;;
 
-		//if (abs(totalRepulsiveForce[0])  + abs(totalRepulsiveForce[1]) < 10
-		//	){
-		//		repScale = .004;
-		//} else if (abs(totalAttractiveForce[0])  + abs(totalAttractiveForce[1]) > 80) {
-		//	xyScale = .004;
+		if (abs(totalRepulsiveForce[0])  + abs(totalRepulsiveForce[1]) < 10
+			){
+				repScale = .03;
+		} //else if (abs(totalAttractiveForce[0])  + abs(totalAttractiveForce[1]) > 80) {
+			//xyScale = .004;
 		//}
 //
 //		cout << "Att\t" << setprecision(4) << totalAttractiveForce[0] << "\t" << setprecision(4) << totalAttractiveForce[1] << "\t" 
