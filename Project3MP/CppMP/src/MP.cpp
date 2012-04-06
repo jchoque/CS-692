@@ -59,7 +59,6 @@ void MotionPlanner::ExtendTree(const int    vid,
 	// walk down this vertex path to see if there are any obstacles or the 
 	// goal
 	while (!inObstacle && distance > stepSize){
-		Sleep(150);
 		nextX += (sto[0] - nextX)/distance;
 		nextY += (sto[1] - nextY)/distance;
 		// Set the robot location so we can determine if this is a valid state
