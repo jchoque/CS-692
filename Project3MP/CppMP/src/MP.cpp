@@ -70,7 +70,7 @@ void MotionPlanner::ExtendTree(const int    vid,
 		if (m_simulator->IsValidState()){
 			distance = sqrt(pow(nextX - sto[0], 2) + pow(nextY - sto[1], 2));
 			if (m_simulator->HasRobotReachedGoal()){
-				m_vidAtGoal = 1;
+				m_vidAtGoal = vid;
 				break;
 				cout << "We've reached the goal!" << endl;
 			}
@@ -117,7 +117,6 @@ void MotionPlanner::ExtendRandom(void)
 	
 	cout << "Sto at " << sto[0] << " " << sto[1] << endl;
 	ExtendTree(vid, sto);
-	cout<<"Done with extending!"<<endl;
     
     m_totalSolveTime += ElapsedTime(&clk);
 }
