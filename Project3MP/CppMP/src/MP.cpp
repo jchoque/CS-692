@@ -34,35 +34,38 @@ MotionPlanner::~MotionPlanner(void)
 void MotionPlanner::ExtendTree(const int    vid, 
 			       const double sto[])
 {
+	//This is our start position
 	double vertexX = m_vertices[vid]->m_state[0];
-	double vertexY = m_vertices[vid]->m_state[1];
-
-	for (int i = 0; i < m_vertices.size() && false; i++){
-		Vertex *v = m_vertices[i];
-		if (v->m_parent == vid){
-			vertexX = m_vertices[i]->m_state[0];
-			vertexY = m_vertices[i]->m_state[1];
-			break;
-		}
-	}
-	
+	double vertexY = m_vertices[vid]->m_state[1];	
 	double stepSize = m_simulator->GetDistOneStep();
+
+	//This is our initial robot position. If we don't move down this way, then we don't want to revert back
+	//double robotInitX = m_simulator->GetRobotCenterX();
+	//double robotInitY = m_simulator->GetRobotCenterY();
+
 	// Slope is our robot start location compared to the sto point
-	double nextX = m_simulator->GetRobotCenterX();
-	double nextY = m_simulator->GetRobotCenterY();
-	double slope = (sto[0] - nextX)/(sto[1] - nextY);
-	
+	//double nextX = m_simulator->GetRobotCenterX();
+	//double nextY = m_simulator->GetRobotCenterY();
+	//double slope = (sto[0] - nextX)/(sto[1] - nextY);
+	//double slope =  (sto[1]-vertexY)/(sto[0]-vertexX);
 	double distance = sqrt(pow(vertexX - sto[0], 2) + pow(vertexY - sto[1], 2));
 	bool inObstacle = false;
 	
+	double deltaX = (sto[0]-vertexX)/distance;
+	double deltaY = (sto[1]-vertexY)/distance;
 	// While we don't hit an obstacle and our distance is greater than 0
 	// walk down this vertex path to see if there are any obstacles or the 
 	// goal
-	while (!inObstacle && distance > stepSize){
-		nextX += (sto[0] - nextX)/distance;
-		nextY += (sto[1] - nextY)/distance;
+	double nextX=vertexX;
+	double nextY=vertexY;
+	while (!inObstacle && distance >=stepSize){
+		
+		//This will first "normalize" the vector and will increase it by a single step
+		nextX += (deltaX * stepSize);
+		nextY += (deltaY * stepSize);
+		
 		// Set the robot location so we can determine if this is a valid state
-		m_simulator->SetRobotCenter(vertexX, vertexY);
+		m_simulator->SetRobotCenter(nextX, nextY);
 		
 		if (m_simulator->IsValidState()){
 			distance = sqrt(pow(nextX - sto[0], 2) + pow(nextY - sto[1], 2));
@@ -100,9 +103,12 @@ void MotionPlanner::ExtendRandom(void)
     StartTime(&clk);
 	double sto[2], robot[2];
 	
-	int vid = ((Vertex *)m_vertices[m_vertices.size() - 1])->m_parent + 1;
-	
-	cout << "Found vid to be " << vid << endl;
+	//int vid = ((Vertex *)m_vertices[m_vertices.size() - 1])->m_parent + 1;
+	//Uniformly pack an index
+	int vid = (int)PseudoRandomUniformReal(0,m_vertices.size()-1);
+
+
+	cout << "Found vid to be " << vid <<"out of "<<m_vertices.size()-1<< endl;
 	robot[0] = m_simulator->GetRobotCenterX();
 	robot[1] = m_simulator->GetRobotCenterY();
 	
@@ -111,6 +117,7 @@ void MotionPlanner::ExtendRandom(void)
 	
 	cout << "Sto at " << sto[0] << " " << sto[1] << endl;
 	ExtendTree(vid, sto);
+	cout<<"Done with extending!"<<endl;
     
     m_totalSolveTime += ElapsedTime(&clk);
 }
