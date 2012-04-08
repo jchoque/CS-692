@@ -236,6 +236,7 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 
 	}
 
+	cout<<endl<<endl<<"CHRIS: End of my approach, total num vertexs"<<m_vertices.size()<<endl;
 	//6. Sample the goal. If there's a clear path, might as well try
     m_totalSolveTime += ElapsedTime(&clk);
 }
