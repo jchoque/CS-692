@@ -4,6 +4,8 @@
 #include <GLUT/glut.h>
 #elif defined _WIN32
 #include "glutForWindows.h"
+#include<Windows.h>
+
 #else
 #include <GL/glut.h>
 #endif
@@ -90,6 +92,9 @@ void Graphics::HandleEventOnTimer(void)
 	    m_pathPos = 0;
 	
 	m_simulator.SetRobotState(m_planner->m_vertices[m_path[m_pathPos]]->m_state);
+#ifdef _WIN32
+	Sleep(500);
+#endif
 	++m_pathPos;
     }
 } 

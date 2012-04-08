@@ -127,6 +127,32 @@ void MotionPlanner::ExtendRRT(void)
     StartTime(&clk);
  
 //your code
+	//The random sample of a new state
+	double sto[2];
+
+	//Uniformly sample a state
+	m_simulator->SampleState(sto);
+
+	//Now find the vertex that is closest to the goal
+	int currMinIdx = 0;
+	double currMinDistance = sqrt( pow(sto[0]-m_vertices[0]->m_state[0],2) + pow(sto[1]-m_vertices[0]->m_state[1],2));
+	for(int i=1;i<m_vertices.size();i++)
+	{
+		double vertexX = m_vertices[i]->m_state[0];
+		double vertexY = m_vertices[i]->m_state[1];
+
+		double tempDistance = sqrt( pow(sto[0]-vertexX,2) + pow(sto[1]-vertexY,2));
+
+		if(tempDistance < currMinDistance)
+		{
+			currMinIdx = i;
+			currMinDistance = tempDistance;
+
+		}
+	}
+
+	//Now that we've found the min distance, extend the vertex
+	ExtendTree(currMinIdx,sto);
     
     m_totalSolveTime += ElapsedTime(&clk);
 }
@@ -164,6 +190,8 @@ void MotionPlanner::AddVertex(Vertex * const v)
 
 void MotionPlanner::GetPathFromInitToGoal(std::vector<int> *path) const
 {
+
+	
     std::vector<int> rpath;
     
     rpath.clear();
@@ -175,6 +203,7 @@ void MotionPlanner::GetPathFromInitToGoal(std::vector<int> *path) const
 	i = m_vertices[i]->m_parent;	
     } 
     while(i >= 0);
+	
     
     path->clear();
     for(int i = rpath.size() - 1; i >= 0; --i)
