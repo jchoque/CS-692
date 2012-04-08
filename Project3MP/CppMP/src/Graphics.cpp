@@ -62,14 +62,22 @@ void Graphics::MainLoop(void)
 
 void Graphics::HandleEventOnTimer(void)
 {
-    if(m_run && m_method >= 1 && m_method <= 4)
+    if(m_run && m_method >= 1 && m_method <= 5)
     {
 	for(int i = 0; i < 1000 && !m_planner->IsProblemSolved(); ++i)
 	{
-	    if(m_method == 1)      m_planner->ExtendRandom();
-	    else if(m_method == 2) m_planner->ExtendRRT();
-	    else if(m_method == 3) m_planner->ExtendEST();
-	    else if(m_method == 4) m_planner->ExtendMyApproach();
+		switch(m_method)
+		{
+		case 1: m_planner->ExtendRandom();
+			break;
+		case 2: m_planner->ExtendRRT();
+			break;
+		case 3: m_planner->ExtendEST();
+			break;
+		case 4: m_planner->ExtendMyApproach_Chris();
+			break;
+		case 5: m_planner->ExtendMyApproach_Brian();
+		}
 	}
 	if(!m_planner->IsProblemSolved())
 	    printf("TotalSolveTime = %f [Solved = %d] [NrVertices = %d]\n", 
@@ -172,7 +180,7 @@ void Graphics::HandleEventOnKeyPress(const int key)
 	m_drawPlannerVertices = !m_drawPlannerVertices;
 	break;
 
-    case '1': case '2': case '3': case '4':
+	case '1': case '2': case '3': case '4':case '5':
 	m_run    = true;	
 	m_method = key - '0';
 	break;

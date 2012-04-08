@@ -5,6 +5,8 @@
 #include <iostream>
 
 using namespace std;
+
+
 MotionPlanner::MotionPlanner(Simulator * const simulator)
 {
     m_simulator = simulator;   
@@ -168,16 +170,81 @@ void MotionPlanner::ExtendEST(void)
 }
 
 
-void MotionPlanner::ExtendMyApproach(void)
+
+//Chris's Approach: Idea is to do the following:
+//1. Uniformly pick an obstacle
+//2. Uniformly pick an angle around the chosen obstacle
+//3. Uniformly pick a distance from the obstacle, in the bounds [radius+robotRadius, radius+2*robotRadius]
+//4. Get point that's the distance and angle from the center of the chosen obstacle
+//5. Uniformly pick a vertex to try. Keep trying all vertexes (randomly) until all have been tried or a connection 
+//can be made. 
+//6. At the end, sample the goal. The idea is that if you can see the goal, go for it. 
+void MotionPlanner::ExtendMyApproach_Chris(void)
 {
     Clock clk;
     StartTime(&clk);
  
 //your code
-    
+
+	//Idea: 
+	//1. Unformly pick an obstacle. 
+	int obsIdx = PseudoRandomUniformReal(0,m_simulator->GetNrObstacles());
+	//2. Next uniformly pick an angle around the obstacle. 
+	double angleInDegs = PseudoRandomUniformReal(0,359); //This will get an angle in degrees, be sure to convert to radians
+	//before calculating 
+	double angleInRads = convertDegsToRads(angleInDegs);
+	//3. Finally pick a random distance in the bounds: (radius+robotRadius, radius+robotRadius*2)
+	double distFromObs = PseudoRandomUniformReal(m_simulator->GetObstacleRadius(obsIdx)+m_simulator->GetRobotRadius(),m_simulator->GetObstacleRadius(obsIdx)+2*m_simulator->GetRobotRadius());
+    //4. Get a pont at an angle around the circle at the random distance. 
+	double sto[2];
+	sto[0] = m_simulator->GetObstacleCenterX(obsIdx) + distFromObs*cos(angleInRads);
+	sto[1] = m_simulator->GetObstacleCenterY(obsIdx) + distFromObs*sin(angleInRads);
+
+	//5. Uniformly pick a vertex until either all vertexs are chosen or one has been added 
+	bool isAdded = false;
+	int currSize = m_vertices.size();
+
+	vector<Vertex *>tempVec(m_vertices);
+	
+	//Instead of randomly, we sort by distnace:
+	
+	//So randomly pick a vertex and keep going through until we are able to add one
+	for(int i=0;i<currSize && !isAdded;i++)
+	{
+	
+		int idx = PseudoRandomUniformReal(0,tempVec.size()-1);
+
+		cout<<"Trying idx["<<idx<<" with sto=("<<sto[0]<<", "<<sto[1]<<")"<<endl;
+		ExtendTree(idx,sto);
+		
+		//Keep trying until we find a vertex that works
+		if(currSize != m_vertices.size())
+		{
+			cout<<"ADDED sto=("<<sto[0]<<", "<<sto[1]<<") to vertex: "<<idx<<endl;
+			isAdded = true;
+		}
+		tempVec.erase(tempVec.begin() + idx);
+
+	}
+	
+	//6. If we added a vertex, we should try connecting the vertex to the goal
+	if(isAdded)
+	{
+		sto[0] = m_simulator->GetGoalCenterX();
+		sto[1] = m_simulator->GetGoalCenterY();
+		ExtendTree(m_vertices.size()-1,sto);
+
+	}
+
+	//6. Sample the goal. If there's a clear path, might as well try
     m_totalSolveTime += ElapsedTime(&clk);
 }
 
+
+void MotionPlanner::ExtendMyApproach_Brian(void)
+{
+
+}
 
 void MotionPlanner::AddVertex(Vertex * const v)
 {
@@ -209,5 +276,3 @@ void MotionPlanner::GetPathFromInitToGoal(std::vector<int> *path) const
     for(int i = rpath.size() - 1; i >= 0; --i)
 	path->push_back(rpath[i]);
 }
-
-    

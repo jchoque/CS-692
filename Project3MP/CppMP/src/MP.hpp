@@ -34,14 +34,22 @@ public:
 
     void ExtendEST(void);
 
-    void ExtendMyApproach(void);
+    void ExtendMyApproach_Chris(void);
+	
+	void ExtendMyApproach_Brian(void);
     
         
 protected:
+
     bool IsProblemSolved(void)
     {
 	return m_vidAtGoal >= 0;
     }
+
+	double convertDegsToRads(double pAngleInDegs)
+	{
+		return pAngleInDegs * (180/M_PI);
+	}
 
     void GetPathFromInitToGoal(std::vector<int> *path) const;
 
