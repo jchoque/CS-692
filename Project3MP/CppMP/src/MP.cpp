@@ -3,6 +3,7 @@
 #include "MyTimer.hpp"
 #include <cstring>
 #include <iostream>
+#include <math.h>
 
 using namespace std;
 
@@ -40,16 +41,6 @@ void MotionPlanner::ExtendTree(const int    vid,
 	double vertexX = m_vertices[vid]->m_state[0];
 	double vertexY = m_vertices[vid]->m_state[1];	
 	double stepSize = m_simulator->GetDistOneStep();
-
-	//This is our initial robot position. If we don't move down this way, then we don't want to revert back
-	//double robotInitX = m_simulator->GetRobotCenterX();
-	//double robotInitY = m_simulator->GetRobotCenterY();
-
-	// Slope is our robot start location compared to the sto point
-	//double nextX = m_simulator->GetRobotCenterX();
-	//double nextY = m_simulator->GetRobotCenterY();
-	//double slope = (sto[0] - nextX)/(sto[1] - nextY);
-	//double slope =  (sto[1]-vertexY)/(sto[0]-vertexX);
 	double distance = sqrt(pow(vertexX - sto[0], 2) + pow(vertexY - sto[1], 2));
 	bool inObstacle = false;
 	
@@ -74,11 +65,9 @@ void MotionPlanner::ExtendTree(const int    vid,
 			if (m_simulator->HasRobotReachedGoal()){
 				m_vidAtGoal = vid;
 				break;
-				cout << "We've reached the goal!" << endl;
 			}
 		}
 		else {
-			cout << "Hit obstacle" << endl;
 			inObstacle = true;
 			// Reset the robot to be at the previous vertex
 			m_simulator->SetRobotCenter(vertexX, vertexY);
@@ -88,7 +77,6 @@ void MotionPlanner::ExtendTree(const int    vid,
 	// If we are not in an obstacle then we have found a valid vertex
 	// so add it to our list
 	if (!inObstacle) {
-		cout << "Adding new vertex" << endl;
 		Vertex *vertex = new Vertex();
 		vertex->m_state[0] = nextX;
 		vertex->m_state[1] = nextY;
@@ -100,24 +88,14 @@ void MotionPlanner::ExtendTree(const int    vid,
 
 void MotionPlanner::ExtendRandom(void)
 {
-	cout << "Starting ExtendRandom" << endl;
     Clock clk;
     StartTime(&clk);
-	double sto[2], robot[2];
-	
-	//int vid = ((Vertex *)m_vertices[m_vertices.size() - 1])->m_parent + 1;
-	//Uniformly pack an index
+	double sto[2];
+
+	//Uniformly pick an index
 	int vid = (int)PseudoRandomUniformReal(0,m_vertices.size()-1);
-
-
-	cout << "Found vid to be " << vid <<"out of "<<m_vertices.size()-1<< endl;
-	robot[0] = m_simulator->GetRobotCenterX();
-	robot[1] = m_simulator->GetRobotCenterY();
 	
-	cout << "Robot at " << robot[0] << " " << robot[1] << endl;
-	m_simulator->SampleState(sto);
-	
-	cout << "Sto at " << sto[0] << " " << sto[1] << endl;
+	// Extend the tree out to this point if there are no obstacles
 	ExtendTree(vid, sto);
     
     m_totalSolveTime += ElapsedTime(&clk);
@@ -127,8 +105,7 @@ void MotionPlanner::ExtendRRT(void)
 {
     Clock clk;
     StartTime(&clk);
- 
-//your code
+
 	//The random sample of a new state
 	double sto[2];
 
@@ -164,8 +141,59 @@ void MotionPlanner::ExtendEST(void)
 {
     Clock clk;
     StartTime(&clk);
+	
+	// Get our next state to check
+	double sto[2];
+	m_simulator->SampleState(sto);
 
-//your code    
+	// Find the maximum children a vertex could have
+	int maxWeight = 0;
+	for (unsigned int i = 1; i < m_vertices.size(); i++){
+		if (m_vertices[i]->m_nchildren > maxWeight){
+			maxWeight = m_vertices[i]->m_nchildren;
+		}
+	}
+	// Increase the chances of picking a vertex with the most children
+	maxWeight *= 2;
+
+	// If we have multiple vertices with the same number of children(weight)
+	// then store their index and choose one of them randomly later
+	vector<int> matchingVertices;
+
+	// Generate a random number based on the maxWeight and then
+	// pick the vertex that matches that weight
+	int weightPicked = ceil(PseudoRandomUniformReal(0,maxWeight) / 2);
+
+	int vid = 0;
+	for (unsigned int i = 1; i < m_vertices.size(); i++){
+		if (m_vertices[i]->m_nchildren == weightPicked){
+			matchingVertices.push_back(i);
+			vid = i;
+		}
+		else if (m_vertices[i]->m_nchildren < weightPicked) {
+			if (matchingVertices.size() == 0 ){
+				vid = i;
+				matchingVertices.push_back(i);
+			} else if (m_vertices[matchingVertices[0]]->m_nchildren < 
+				m_vertices[i]->m_nchildren) {
+				matchingVertices.clear();
+				vid = i;
+				matchingVertices.push_back(i);
+			} else if (m_vertices[matchingVertices[0]]->m_nchildren < 
+				m_vertices[i]->m_nchildren) {
+				matchingVertices.push_back(i);
+			}
+		}
+	}
+
+	// If we found multiple vertices that had the same matching weight then pick 
+	// one of them at random
+	if (matchingVertices.size() > 1){
+		int randomPick = (int)PseudoRandomUniformReal(0,matchingVertices.size() - 1);
+		vid = matchingVertices[randomPick];
+	}
+	ExtendTree(vid, sto);
+	//Sleep (200);
     m_totalSolveTime += ElapsedTime(&clk);
 }
 
