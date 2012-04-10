@@ -153,8 +153,6 @@ void MotionPlanner::ExtendEST(void)
 			maxWeight = m_vertices[i]->m_nchildren;
 		}
 	}
-	// Increase the chances of picking a vertex with the most children
-	maxWeight *= 2;
 
 	// If we have multiple vertices with the same number of children(weight)
 	// then store their index and choose one of them randomly later
@@ -162,38 +160,22 @@ void MotionPlanner::ExtendEST(void)
 
 	// Generate a random number based on the maxWeight and then
 	// pick the vertex that matches that weight
-	int weightPicked = ceil(PseudoRandomUniformReal(0,maxWeight) / 2);
-
+	double weightPicked = 1/(1 + PseudoRandomUniformReal(0,maxWeight));
+	cout << weightPicked << endl;
 	int vid = 0;
-	for (unsigned int i = 1; i < m_vertices.size(); i++){
-		if (m_vertices[i]->m_nchildren == weightPicked){
-			matchingVertices.push_back(i);
+	double closestVector = -1;
+	double weightDiff;
+	double vectorWeight;
+	for (unsigned int i = 0; i < m_vertices.size(); i++){
+		vectorWeight = 1/(1 + m_vertices[i]->m_nchildren);
+		weightDiff = abs(vectorWeight - weightPicked);
+		if (weightDiff < closestVector){
+			closestVector = weightDiff;
 			vid = i;
 		}
-		else if (m_vertices[i]->m_nchildren < weightPicked) {
-			if (matchingVertices.size() == 0 ){
-				vid = i;
-				matchingVertices.push_back(i);
-			} else if (m_vertices[matchingVertices[0]]->m_nchildren < 
-				m_vertices[i]->m_nchildren) {
-				matchingVertices.clear();
-				vid = i;
-				matchingVertices.push_back(i);
-			} else if (m_vertices[matchingVertices[0]]->m_nchildren < 
-				m_vertices[i]->m_nchildren) {
-				matchingVertices.push_back(i);
-			}
-		}
 	}
 
-	// If we found multiple vertices that had the same matching weight then pick 
-	// one of them at random
-	if (matchingVertices.size() > 1){
-		int randomPick = (int)PseudoRandomUniformReal(0,matchingVertices.size() - 1);
-		vid = matchingVertices[randomPick];
-	}
 	ExtendTree(vid, sto);
-	//Sleep (200);
     m_totalSolveTime += ElapsedTime(&clk);
 }
 
