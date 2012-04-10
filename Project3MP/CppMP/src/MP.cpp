@@ -141,7 +141,7 @@ void MotionPlanner::ExtendEST(void)
 {
     Clock clk;
     StartTime(&clk);
-	
+
 	// Get our next state to check
 	double sto[2];
 	m_simulator->SampleState(sto);
@@ -154,28 +154,41 @@ void MotionPlanner::ExtendEST(void)
 		}
 	}
 
-	// If we have multiple vertices with the same number of children(weight)
-	// then store their index and choose one of them randomly later
-	vector<int> matchingVertices;
-
 	// Generate a random number based on the maxWeight and then
 	// pick the vertex that matches that weight
-	double weightPicked = 1/(1 + PseudoRandomUniformReal(0,maxWeight));
-	cout << weightPicked << endl;
-	int vid = 0;
-	double closestVector = -1;
-	double weightDiff;
-	double vectorWeight;
+	double weightPicked = 1/(1 + (int)PseudoRandomUniformReal(0,maxWeight)); 
+
+	int vid = 0;  // The vector index selected
+	double closestWeight = 10.0; // Just default to a relatively large double
+		// this variable will hold the difference between a vector's weight and
+		// the weightPicked that is closest to the weightPicked
+
+	double weightDiff; // Holds the difference between the current vector's weight
+		// and the weightPicked
+
+	double vectorWeight; // Holds the vectors weight
+
 	for (unsigned int i = 0; i < m_vertices.size(); i++){
-		vectorWeight = 1/(1 + m_vertices[i]->m_nchildren);
-		weightDiff = abs(vectorWeight - weightPicked);
-		if (weightDiff < closestVector){
-			closestVector = weightDiff;
+		vectorWeight = 1/(1 + m_vertices[i]->m_nchildren); // Calculate this vectors
+			//relative weight
+
+		weightDiff = vectorWeight - weightPicked; // Find the difference between this
+			// vectors weight and the random one
+		cout << "vid " << i << " weight " << vectorWeight << " weightPicked " 
+			 << weightPicked << " and children " << m_vertices[i]->m_nchildren << endl;
+		if (weightDiff >= 0 && weightDiff < closestWeight){
+			closestWeight = weightDiff;
 			vid = i;
+			cout << "vid chosen is " << i << endl;
+			// We found an exact match so break out of the loop
+			if (closestWeight == 0){
+				break;
+			}
 		}
 	}
 
 	ExtendTree(vid, sto);
+
     m_totalSolveTime += ElapsedTime(&clk);
 }
 
@@ -254,7 +267,29 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 
 void MotionPlanner::ExtendMyApproach_Brian(void)
 {
+	// Get our next state to check
+	double sto[2];
+	bool uniquePoint = false;
+	int vid = 0;
 
+	// Randomly select a vid
+	vid = (int)PseudoRandomUniformReal(0, m_vertices.size() - 1);
+
+	// Loop through all verteces to make sure we aren't selecting a point too close to 
+	// other verteces
+	while (!uniquePoint){
+		m_simulator->SampleState(sto);
+		bool tooClose = true;
+		for (unsigned int i = 0; i < m_vertices.size(); i++){
+			double closeness = sqrt(pow(sto[0] - m_vertices[i]->m_state[0], 2) + pow(sto[1] - m_vertices[i]->m_state[1], 2));
+			if (closeness < 3){ // We are too close so break out and select a new one
+				tooClose = false;
+				break;
+			}
+		}
+		uniquePoint = tooClose;
+	}
+	ExtendTree(vid, sto);
 }
 
 void MotionPlanner::AddVertex(Vertex * const v)
