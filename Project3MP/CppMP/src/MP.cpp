@@ -265,31 +265,68 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 }
 
 
+// Brian's Approach:  Idea is to do the following:
+//1. Pick a random point that is not "close" to another valid vertex
+// Closeness in this case is within the width of the robot
+//2. Select the vertex closest to this point and try to add the point using that vertex
+//3. If that succeeds then continue on
+//4. Otherwise find the vertex closest to the goal ignoring the vertex already tried
+// and try to add the point from that vertex
 void MotionPlanner::ExtendMyApproach_Brian(void)
 {
 	// Get our next state to check
 	double sto[2];
 	bool uniquePoint = false;
-	int vid = 0;
-
-	// Randomly select a vid
-	vid = (int)PseudoRandomUniformReal(0, m_vertices.size() - 1);
+	int robotSize = (int)m_simulator->GetRobotRadius() * 2;
+	unsigned int vertexCount = m_vertices.size();
+	int vid = 0 ; 
+	double minDistance;
 
 	// Loop through all verteces to make sure we aren't selecting a point too close to 
 	// other verteces
-	while (!uniquePoint){
+	do{
 		m_simulator->SampleState(sto);
+		minDistance = sqrt(pow(sto[0] - m_vertices[0]->m_state[0], 2) +
+				pow(sto[1] - m_vertices[0]->m_state[1], 2));
+		
 		bool tooClose = true;
-		for (unsigned int i = 0; i < m_vertices.size(); i++){
+		for (unsigned int i = 0; i < vertexCount; i++){
 			double closeness = sqrt(pow(sto[0] - m_vertices[i]->m_state[0], 2) + pow(sto[1] - m_vertices[i]->m_state[1], 2));
-			if (closeness < 3){ // We are too close so break out and select a new one
+			if (closeness <= robotSize){ // We are too close so break out and select a new one
 				tooClose = false;
 				break;
+			} 
+			// Choose the vertex closest to this sto
+			else if (closeness < minDistance){
+				vid = i; 
+				minDistance = closeness;
 			}
 		}
 		uniquePoint = tooClose;
-	}
+	} while (!uniquePoint);
+
+	// Try to add the point from the vertex closest to it
 	ExtendTree(vid, sto);
+
+	// If the vertex failed to be added then try finding the closest vertice
+	// to the goal besides the one already tried and branch to the point from it
+	if (vertexCount == m_vertices.size()){
+		minDistance = sqrt(pow(m_simulator->GetGoalCenterX() - m_vertices[0]->m_state[0], 2) +
+				pow(m_simulator->GetGoalCenterY() - m_vertices[0]->m_state[1], 2));
+
+		for (unsigned int i = 1; i < vertexCount; i++){
+			double closeness = sqrt(pow(m_simulator->GetGoalCenterX() - m_vertices[i]->m_state[0], 2) +
+				pow(m_simulator->GetGoalCenterY() - m_vertices[i]->m_state[1], 2));
+
+			// Pick the closest vertex to the goal and not a vertex that was selected the first time
+			if (closeness < minDistance && vid != i){ 
+				minDistance = closeness;
+				vid = i;
+			}
+		}
+		// Try to add the point from the vertex closest to the goal
+		ExtendTree(vid, sto);
+	}
 }
 
 void MotionPlanner::AddVertex(Vertex * const v)
