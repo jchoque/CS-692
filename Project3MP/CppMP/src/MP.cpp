@@ -145,36 +145,11 @@ void MotionPlanner::ExtendEST(void)
     Clock clk;
     StartTime(&clk);
 
-	double vectorWeight = 0;
 	// Get our next state to check
 	double sto[2];
 	m_simulator->SampleState(sto);
 
-	// Find the maximum children a vertex could have
-	double maxWeight = 0;
-	for (unsigned int i = 0; i < m_vertices.size(); i++){
-			vectorWeight = 1.0/(1.0 + 1.0 * m_vertices[i]->m_nchildren * 
-				m_vertices[i]->m_nchildren); // Calculate this vectors
-			//relative weight
-			maxWeight += vectorWeight;
-	}
-
-	// Generate a random number based on the maxWeight and then
-	// pick the vertex that matches that weight
-	double weightPicked = PseudoRandomUniformReal(0,maxWeight); 
-
-	int vid = 0;  // The vector index selected
-	int totalWeight = 0;
-	for (unsigned int i = 0; i < m_vertices.size(); i++){
-		vectorWeight = 1.0/(1.0 + 1.0 * m_vertices[i]->m_nchildren * 
-				m_vertices[i]->m_nchildren); 
-		totalWeight += vectorWeight;  // Add it to the previous vector weights
-		if (totalWeight >= weightPicked){
-			vid = i;
-			break;
-		}
-	}
-
+	int vid = pickWeightedRandomIdx();
 	ExtendTree(vid, sto);
 
     m_totalSolveTime += ElapsedTime(&clk);
@@ -344,9 +319,38 @@ void MotionPlanner::GetPathFromInitToGoal(std::vector<int> *path) const
 	i = m_vertices[i]->m_parent;	
     } 
     while(i >= 0);
-	
-    
+   
     path->clear();
     for(int i = rpath.size() - 1; i >= 0; --i)
 	path->push_back(rpath[i]);
+}
+
+
+int MotionPlanner::pickWeightedRandomIdx()
+{
+	// Find the maximum children a vertex could have
+	double totalWeight = 0;
+	
+	for (unsigned int i = 0; i < m_vertices.size(); i++){
+		//relative weight
+		totalWeight += calculateWeight(i);
+	}
+
+	// Generate a random number based on the totalWeight and then
+	// pick the vertex that matches that weight
+	double weightPicked = PseudoRandomUniformReal(0,totalWeight); 
+
+	int vid = 0;  // The vector index selected
+	
+	//Reinit the total weight
+	totalWeight = 0;
+	for (unsigned int i = 0; i < m_vertices.size(); i++){ 
+		totalWeight += calculateWeight(i);  // Add it to the previous vector weights
+		if (totalWeight >= weightPicked){
+			vid = i;
+			break;
+		}
+	}
+
+	return vid;
 }

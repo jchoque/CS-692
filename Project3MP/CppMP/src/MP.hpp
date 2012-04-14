@@ -41,6 +41,13 @@ public:
         
 protected:
 
+	double calculateWeight(int pVertex)
+	{
+		return 1.0/(1.0*pow((double)m_vertices[pVertex]->m_nchildren,2));
+	}
+
+	int pickWeightedRandomIdx();
+
     bool IsProblemSolved(void)
     {
 	return m_vidAtGoal >= 0;
