@@ -92,6 +92,9 @@ void MotionPlanner::ExtendRandom(void)
     StartTime(&clk);
 	double sto[2];
 
+	//Uniformly sample a state
+	m_simulator->SampleState(sto);
+
 	//Uniformly pick an index
 	int vid = (int)PseudoRandomUniformReal(0,m_vertices.size()-1);
 	
@@ -115,7 +118,7 @@ void MotionPlanner::ExtendRRT(void)
 	//Now find the vertex that is closest to the goal
 	int currMinIdx = 0;
 	double currMinDistance = sqrt( pow(sto[0]-m_vertices[0]->m_state[0],2) + pow(sto[1]-m_vertices[0]->m_state[1],2));
-	for(int i=1;i<m_vertices.size();i++)
+	for(int i=0;i<m_vertices.size();i++)
 	{
 		double vertexX = m_vertices[i]->m_state[0];
 		double vertexY = m_vertices[i]->m_state[1];
@@ -142,69 +145,35 @@ void MotionPlanner::ExtendEST(void)
     Clock clk;
     StartTime(&clk);
 
+	double vectorWeight = 0;
 	// Get our next state to check
 	double sto[2];
 	m_simulator->SampleState(sto);
 
-	//1. First get the total weight:
-	double totalWeight = 0;
-	double maxWeight = 1;
-	vector<double>weights;
-	for(int i=0;i<m_vertices.size();i++)
-	{
-		double currentWeight =(1.0/(1.0+m_vertices[i]->m_nchildren)); 
-		weights.push_back(currentWeight);
-		totalWeight += currentWeight;
-
-		if(currentWeight >maxWeight)
-		{
-			maxWeight = currentWeight;
-		}
-
-	}
-
-	for(int i=0;i<weights.size();i++)
-	{
-		weights[i] /=maxWeight;
-	}
-
-
-	double percentage = PseudoRandomUniformReal(0,1.0);
-	
-	bool isFound = false;
-	while(!isFound)
-	{
-		int idx = 
-	}
-
-
-	//double closestWeight = 10.0; // Just default to a relatively large double
-		// this variable will hold the difference between a vector's weight and
-		// the weightPicked that is closest to the weightPicked
-
-	//double weightDiff; // Holds the difference between the current vector's weight
-		// and the weightPicked
-
-	//double vectorWeight; // Holds the vectors weight
-	/*
+	// Find the maximum children a vertex could have
+	double maxWeight = 0;
 	for (unsigned int i = 0; i < m_vertices.size(); i++){
-		vectorWeight = (1.0/(1.0 + m_vertices[i]->m_nchildren)); // Calculate this vectors
+			vectorWeight = 1.0/(1.0 + 1.0 * m_vertices[i]->m_nchildren * 
+				m_vertices[i]->m_nchildren); // Calculate this vectors
 			//relative weight
+			maxWeight += vectorWeight;
+	}
 
-		weightDiff = vectorWeight - weightPicked; // Find the difference between this
-			// vectors weight and the random one
-		cout << "vid " << i << " weight " << vectorWeight << " weightPicked " 
-			 << weightPicked << " and children " << m_vertices[i]->m_nchildren << endl;
-		if (weightDiff >= 0 && weightDiff < closestWeight){
-			closestWeight = weightDiff;
+	// Generate a random number based on the maxWeight and then
+	// pick the vertex that matches that weight
+	double weightPicked = PseudoRandomUniformReal(0,maxWeight); 
+
+	int vid = 0;  // The vector index selected
+	int totalWeight = 0;
+	for (unsigned int i = 0; i < m_vertices.size(); i++){
+		vectorWeight = 1.0/(1.0 + 1.0 * m_vertices[i]->m_nchildren * 
+				m_vertices[i]->m_nchildren); 
+		totalWeight += vectorWeight;  // Add it to the previous vector weights
+		if (totalWeight >= weightPicked){
 			vid = i;
-			cout << "vid chosen is " << i << endl;
-			// We found an exact match so break out of the loop
-			if (closestWeight == 0){
-				break;
-			}
+			break;
 		}
-	} */
+	}
 
 	ExtendTree(vid, sto);
 
@@ -293,6 +262,8 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 // and try to add the point from that vertex
 void MotionPlanner::ExtendMyApproach_Brian(void)
 {
+	Clock clk;
+    StartTime(&clk);
 	// Get our next state to check
 	double sto[2];
 	bool uniquePoint = false;
@@ -345,6 +316,7 @@ void MotionPlanner::ExtendMyApproach_Brian(void)
 		}
 		// Try to add the point from the vertex closest to the goal
 		ExtendTree(vid, sto);
+		m_totalSolveTime += ElapsedTime(&clk);
 	}
 }
 
