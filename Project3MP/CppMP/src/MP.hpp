@@ -62,7 +62,7 @@ protected:
 
     void AddVertex(Vertex * const v);
 
-    void ExtendTree(const int    vid,
+    bool ExtendTree(const int    vid,
 		    const double sto[]);
     
     Simulator            *m_simulator;

@@ -34,9 +34,10 @@ MotionPlanner::~MotionPlanner(void)
 }
 
 
-void MotionPlanner::ExtendTree(const int    vid, 
+bool MotionPlanner::ExtendTree(const int    vid, 
 			       const double sto[])
 {
+
 	//This is our start position
 	double vertexX = m_vertices[vid]->m_state[0];
 	double vertexY = m_vertices[vid]->m_state[1];	
@@ -84,6 +85,9 @@ void MotionPlanner::ExtendTree(const int    vid,
 		AddVertex(vertex);
 		m_simulator->SetRobotCenter(nextX, nextY);
 	}
+
+	//Did we hit an obstacle? If not then we added it sucessfully. 
+	return !inObstacle;
 }
 
 void MotionPlanner::ExtendRandom(void)
@@ -162,8 +166,7 @@ void MotionPlanner::ExtendEST(void)
 //2. Uniformly pick an angle around the chosen obstacle
 //3. Uniformly pick a distance from the obstacle, in the bounds [radius+robotRadius, radius+2*robotRadius]
 //4. Get point that's the distance and angle from the center of the chosen obstacle
-//5. Uniformly pick a vertex to try. Keep trying all vertexes (randomly) until all have been tried or a connection 
-//can be made. 
+//5. Used the weighted approach to try and connect
 //6. At the end, sample the goal. The idea is that if you can see the goal, go for it. 
 void MotionPlanner::ExtendMyApproach_Chris(void)
 {
@@ -188,39 +191,38 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 
 	//5. Uniformly pick a vertex until either all vertexs are chosen or one has been added 
 	bool isAdded = false;
+
+	//Used to see if the tree was added 
 	int currSize = m_vertices.size();
 
-	vector<Vertex *>tempVec(m_vertices);
-	
-	//Instead of randomly, we sort by distnace:
-	
-	//So randomly pick a vertex and keep going through until we are able to add one
-	for(int i=0;i<currSize && !isAdded;i++)
-	{
-	
-		int idx = PseudoRandomUniformReal(0,tempVec.size()-1);
+	int vid = pickWeightedRandomIdx();
 
-		cout<<"Trying idx["<<idx<<" with sto=("<<sto[0]<<", "<<sto[1]<<")"<<endl;
-		ExtendTree(idx,sto);
-		
-		//Keep trying until we find a vertex that works
-		if(currSize != m_vertices.size())
-		{
-			cout<<"ADDED sto=("<<sto[0]<<", "<<sto[1]<<") to vertex: "<<idx<<endl;
-			isAdded = true;
-		}
-		tempVec.erase(tempVec.begin() + idx);
-
-	}
-	
-	//6. If we added a vertex, we should try connecting the vertex to the goal
-	if(isAdded)
+	//If we were able to add the vertex, see if we can get to the goal
+	if(ExtendTree(vid,sto))
 	{
 		sto[0] = m_simulator->GetGoalCenterX();
 		sto[1] = m_simulator->GetGoalCenterY();
 		ExtendTree(m_vertices.size()-1,sto);
-
 	}
+	
+	//So randomly pick a vertex and keep going through until we are able to add one
+	//for(int i=0;i<currSize && !isAdded;i++)
+	//{
+	//
+	//	int idx= PseudoRandomUniformReal(0,tempVec.size()-1);
+	//
+	//	cout<<"Trying idx["<<idx<<" with sto=("<<sto[0]<<", "<<sto[1]<<")"<<endl;
+	//	ExtendTree(idx,sto);
+	//	
+	//	//Keep trying until we find a vertex that works
+	//	if(currSize != m_vertices.size())
+	//	{
+	//		cout<<"ADDED sto=("<<sto[0]<<", "<<sto[1]<<") to vertex: "<<idx<<endl;
+	//		isAdded = true;
+	//	}
+	//	tempVec.erase(tempVec.begin() + idx);
+	//	
+	//}
 
 	cout<<endl<<endl<<"CHRIS: End of my approach, total num vertexs"<<m_vertices.size()<<endl;
 	//6. Sample the goal. If there's a clear path, might as well try
