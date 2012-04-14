@@ -46,7 +46,11 @@ protected:
 		return 1.0/(1.0*pow((double)m_vertices[pVertex]->m_nchildren,2));
 	}
 
+	bool shouldPickRand;
+	int failCount;
+
 	int pickWeightedRandomIdx();
+	int pickWeightedObstacle();
 
     bool IsProblemSolved(void)
     {

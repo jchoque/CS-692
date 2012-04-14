@@ -10,6 +10,8 @@ using namespace std;
 
 MotionPlanner::MotionPlanner(Simulator * const simulator)
 {
+	shouldPickRand = false;
+	failCount = 0;
     m_simulator = simulator;   
 
     Vertex *vinit = new Vertex();
@@ -176,8 +178,22 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 //your code
 
 	//Idea: 
-	//1. Unformly pick an obstacle. 
-	int obsIdx = PseudoRandomUniformReal(0,m_simulator->GetNrObstacles());
+	//1. Weighted pick obstacle. The weight will be inversly proportional to the distance to the goal. 
+	//int obsIdx = pickWeightedObstacle();
+	int obsIdx = 0;
+
+	if(shouldPickRand)
+	{
+		cout<<"CHRIS: PICKING RANDOM OBSTACLE!"<<endl;
+		obsIdx = PseudoRandomUniformReal(0,m_simulator->GetNrObstacles());
+	}
+	else
+	{
+		cout<<"CHRIS: PICKING WEIGHTED OBSTACLE!"<<endl;
+		obsIdx = pickWeightedObstacle();
+
+	}	
+	
 	//2. Next uniformly pick an angle around the obstacle. 
 	double angleInDegs = PseudoRandomUniformReal(0,359); //This will get an angle in degrees, be sure to convert to radians
 	//before calculating 
@@ -192,16 +208,29 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 	//5. Uniformly pick a vertex until either all vertexs are chosen or one has been added 
 	bool isAdded = false;
 	
-	//int vid = pickWeightedRandomIdx();
-	int vid = PseudoRandomUniformReal(0,m_vertices.size()-1);
+	int vid = pickWeightedRandomIdx();
+
 	//If we were able to add the vertex, see if we can get to the goal
 	if(ExtendTree(vid,sto))
 	{
+		failCount = 0;
 		sto[0] = m_simulator->GetGoalCenterX();
 		sto[1] = m_simulator->GetGoalCenterY();
 		ExtendTree(m_vertices.size()-1,sto);
+	} 
+	else
+	{
+		failCount++;
+
 	}
 	
+	if(failCount == 50)
+	{
+		shouldPickRand = !shouldPickRand;
+		failCount = 0;
+	}
+	cout<<"CHRIS: FAIL COUNT IS: "<<failCount<<", and is rand: "<<shouldPickRand<<endl;
+
 	//So randomly pick a vertex and keep going through until we are able to add one
 	//for(int i=0;i<currSize && !isAdded;i++)
 	//{
@@ -352,4 +381,42 @@ int MotionPlanner::pickWeightedRandomIdx()
 	}
 
 	return vid;
+}
+
+int MotionPlanner:: pickWeightedObstacle()
+{
+		// Find the maximum children a vertex could have
+	double totalWeight = 0;
+
+
+
+	double currentWeight = 0.0;
+	for (unsigned int i = 0; i < m_simulator->GetNrObstacles(); i++){
+		//relative weight
+		currentWeight = 
+			1.0/(1.0+pow(sqrt( pow(m_simulator->GetGoalCenterX()-m_simulator->GetObstacleCenterX(i),2) +pow(m_simulator->GetGoalCenterY()-m_simulator->GetObstacleCenterY(i),2)),2));
+		
+
+		totalWeight += currentWeight;
+
+	}
+
+	// Generate a random number based on the totalWeight and then
+	// pick the vertex that matches that weight
+	double weightPicked = PseudoRandomUniformReal(0,totalWeight); 
+
+	int idx = 0;  // The vector index selected
+	
+	//Reinit the total weight
+	totalWeight = 0;
+	for (unsigned int i = 0; i < m_simulator->GetNrObstacles(); i++){ 
+		totalWeight += 1.0/(1.0+pow(sqrt( pow(m_simulator->GetGoalCenterX()-m_simulator->GetObstacleCenterX(i),2) +pow(m_simulator->GetGoalCenterY()-m_simulator->GetObstacleCenterY(i),2)),2)); // Add it to the previous vector weights
+		if (totalWeight >= weightPicked){
+			idx = i;
+			break;
+		}
+	}
+
+	return idx;
+
 }
