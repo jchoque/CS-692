@@ -146,30 +146,49 @@ void MotionPlanner::ExtendEST(void)
 	double sto[2];
 	m_simulator->SampleState(sto);
 
-	// Find the maximum children a vertex could have
-	int maxWeight = 0;
-	for (unsigned int i = 1; i < m_vertices.size(); i++){
-		if (m_vertices[i]->m_nchildren > maxWeight){
-			maxWeight = m_vertices[i]->m_nchildren;
+	//1. First get the total weight:
+	double totalWeight = 0;
+	double maxWeight = 1;
+	vector<double>weights;
+	for(int i=0;i<m_vertices.size();i++)
+	{
+		double currentWeight =(1.0/(1.0+m_vertices[i]->m_nchildren)); 
+		weights.push_back(currentWeight);
+		totalWeight += currentWeight;
+
+		if(currentWeight >maxWeight)
+		{
+			maxWeight = currentWeight;
 		}
+
 	}
 
-	// Generate a random number based on the maxWeight and then
-	// pick the vertex that matches that weight
-	double weightPicked = 1/(1 + (int)PseudoRandomUniformReal(0,maxWeight)); 
+	for(int i=0;i<weights.size();i++)
+	{
+		weights[i] /=maxWeight;
+	}
 
-	int vid = 0;  // The vector index selected
-	double closestWeight = 10.0; // Just default to a relatively large double
+
+	double percentage = PseudoRandomUniformReal(0,1.0);
+	
+	bool isFound = false;
+	while(!isFound)
+	{
+		int idx = 
+	}
+
+
+	//double closestWeight = 10.0; // Just default to a relatively large double
 		// this variable will hold the difference between a vector's weight and
 		// the weightPicked that is closest to the weightPicked
 
-	double weightDiff; // Holds the difference between the current vector's weight
+	//double weightDiff; // Holds the difference between the current vector's weight
 		// and the weightPicked
 
-	double vectorWeight; // Holds the vectors weight
-
+	//double vectorWeight; // Holds the vectors weight
+	/*
 	for (unsigned int i = 0; i < m_vertices.size(); i++){
-		vectorWeight = 1/(1 + m_vertices[i]->m_nchildren); // Calculate this vectors
+		vectorWeight = (1.0/(1.0 + m_vertices[i]->m_nchildren)); // Calculate this vectors
 			//relative weight
 
 		weightDiff = vectorWeight - weightPicked; // Find the difference between this
@@ -185,7 +204,7 @@ void MotionPlanner::ExtendEST(void)
 				break;
 			}
 		}
-	}
+	} */
 
 	ExtendTree(vid, sto);
 
