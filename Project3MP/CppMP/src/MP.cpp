@@ -191,12 +191,9 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 
 	//5. Uniformly pick a vertex until either all vertexs are chosen or one has been added 
 	bool isAdded = false;
-
-	//Used to see if the tree was added 
-	int currSize = m_vertices.size();
-
-	int vid = pickWeightedRandomIdx();
-
+	
+	//int vid = pickWeightedRandomIdx();
+	int vid = PseudoRandomUniformReal(0,m_vertices.size()-1);
 	//If we were able to add the vertex, see if we can get to the goal
 	if(ExtendTree(vid,sto))
 	{
