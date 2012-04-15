@@ -185,7 +185,7 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 	if(shouldPickRand)
 	{
 		cout<<"CHRIS: PICKING RANDOM OBSTACLE!"<<endl;
-		obsIdx = PseudoRandomUniformReal(0,m_simulator->GetNrObstacles());
+		obsIdx = PseudoRandomUniformReal(0,m_simulator->GetNrObstacles()-1);
 	}
 	else
 	{
