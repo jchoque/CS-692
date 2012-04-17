@@ -289,7 +289,7 @@ void MotionPlanner::ExtendMyApproach_Brian(void)
 				tooClose = false;
 				break;
 			} 
-			// Choose the vertex closest to this sto
+			// Remember the vertex closest to this sto
 			else if (closeness < minDistance){
 				vid = i; 
 				minDistance = closeness;
@@ -319,8 +319,8 @@ void MotionPlanner::ExtendMyApproach_Brian(void)
 		}
 		// Try to add the point from the vertex closest to the goal
 		ExtendTree(vid, sto);
-		m_totalSolveTime += ElapsedTime(&clk);
 	}
+	m_totalSolveTime += ElapsedTime(&clk);
 }
 
 void MotionPlanner::AddVertex(Vertex * const v)
