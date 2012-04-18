@@ -121,26 +121,8 @@ void MotionPlanner::ExtendRRT(void)
 	//Uniformly sample a state
 	m_simulator->SampleState(sto);
 
-	//Now find the vertex that is closest to the goal
-	int currMinIdx = 0;
-	double currMinDistance = sqrt( pow(sto[0]-m_vertices[0]->m_state[0],2) + pow(sto[1]-m_vertices[0]->m_state[1],2));
-	for(int i=0;i<m_vertices.size();i++)
-	{
-		double vertexX = m_vertices[i]->m_state[0];
-		double vertexY = m_vertices[i]->m_state[1];
-
-		double tempDistance = sqrt( pow(sto[0]-vertexX,2) + pow(sto[1]-vertexY,2));
-
-		if(tempDistance < currMinDistance)
-		{
-			currMinIdx = i;
-			currMinDistance = tempDistance;
-
-		}
-	}
-
 	//Now that we've found the min distance, extend the vertex
-	ExtendTree(currMinIdx,sto);
+	ExtendTree(getClosestVid(sto),sto);
     
     m_totalSolveTime += ElapsedTime(&clk);
 }
@@ -164,11 +146,19 @@ void MotionPlanner::ExtendEST(void)
 
 
 //Chris's Approach: Idea is to do the following:
-//1. Uniformly pick an obstacle
+//1. Pick an obstacle. This will use a weighted algorithm, with obstacles closer to the goal
+// getting a higher weight. However if this algorithm fails to add a vertex in 50 tries, then it switches to a
+// uniform random approach. If the uniform random approach fails 50 times, then it switches back to the weighted. 
+// The reason for this is to try and solve getting out of local minimum. 
+//
 //2. Uniformly pick an angle around the chosen obstacle
+//
 //3. Uniformly pick a distance from the obstacle, in the bounds [radius+robotRadius, radius+2*robotRadius]
+//
 //4. Get point that's the distance and angle from the center of the chosen obstacle
-//5. Used the weighted approach to try and connect
+//
+//5. To get the vertex, this will use an EST based approach where it will attempt to connect to the closest vertex. 
+//
 //6. At the end, sample the goal. The idea is that if you can see the goal, go for it. 
 void MotionPlanner::ExtendMyApproach_Chris(void)
 {
@@ -177,11 +167,8 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
  
 //your code
 
-	//Idea: 
-	//1. Weighted pick obstacle. The weight will be inversly proportional to the distance to the goal. 
-	//int obsIdx = pickWeightedObstacle();
+	//1. Pick an obstacle. This should try a weighted approach or a random.
 	int obsIdx = 0;
-
 	if(shouldPickRand)
 	{
 		obsIdx = PseudoRandomUniformReal(0,m_simulator->GetNrObstacles()-1);
@@ -191,14 +178,15 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 		obsIdx = pickWeightedObstacle();
 
 	}	
-	
 	//2. Next uniformly pick an angle around the obstacle. 
 	double angleInDegs = PseudoRandomUniformReal(0,359); //This will get an angle in degrees, be sure to convert to radians
 	//before calculating 
 	double angleInRads = convertDegsToRads(angleInDegs);
+
 	//3. Finally pick a random distance in the bounds: (radius+robotRadius, radius+robotRadius*2)
 	double distFromObs = PseudoRandomUniformReal(m_simulator->GetObstacleRadius(obsIdx)+m_simulator->GetRobotRadius(),m_simulator->GetObstacleRadius(obsIdx)+2*m_simulator->GetRobotRadius());
-    //4. Get a pont at an angle around the circle at the random distance. 
+    
+	//4. Get a pont at an angle around the circle at the random distance. 
 	double sto[2];
 	sto[0] = m_simulator->GetObstacleCenterX(obsIdx) + distFromObs*cos(angleInRads);
 	sto[1] = m_simulator->GetObstacleCenterY(obsIdx) + distFromObs*sin(angleInRads);
@@ -206,33 +194,18 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 	//5. Uniformly pick a vertex until either all vertexs are chosen or one has been added 
 	bool isAdded = false;
 	
-	//int vid = pickWeightedRandomIdx();
-	double distance = -1;
-	int vid = 0;
-	for(int i=0;i<m_vertices.size();i++)
-	{
-		double vertexX = m_vertices[i]->m_state[0];
-		double vertexY = m_vertices[i]->m_state[1];
-		double currentDistance  = sqrt( pow(sto[0]-vertexX,2)+pow(sto[1]-vertexY,2));
-
-		if(distance == -1 ||currentDistance <distance)
-		{
-			distance = currentDistance;
-			vid = i;
-		}
-
-	}
-
-	//If we were able to add the vertex, see if we can get to the goal
-	if(ExtendTree(vid,sto))
+	//6. Get the closest vid and try to connect
+	if(ExtendTree(getClosestVid(sto),sto))
 	{
 		failCount = 0;
+		//If we were able to add the vertex, see if we can get to the goal
 		sto[0] = m_simulator->GetGoalCenterX();
 		sto[1] = m_simulator->GetGoalCenterY();
 		ExtendTree(m_vertices.size()-1,sto);
 	} 
 	else
 	{
+		//We failed to add, so retry
 		failCount++;
 
 	}
@@ -243,25 +216,6 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 		failCount = 0;
 	}
 
-	//So randomly pick a vertex and keep going through until we are able to add one
-	//for(int i=0;i<currSize && !isAdded;i++)
-	//{
-	//
-	//	int idx= PseudoRandomUniformReal(0,tempVec.size()-1);
-	//
-	//	cout<<"Trying idx["<<idx<<" with sto=("<<sto[0]<<", "<<sto[1]<<")"<<endl;
-	//	ExtendTree(idx,sto);
-	//	
-	//	//Keep trying until we find a vertex that works
-	//	if(currSize != m_vertices.size())
-	//	{
-	//		cout<<"ADDED sto=("<<sto[0]<<", "<<sto[1]<<") to vertex: "<<idx<<endl;
-	//		isAdded = true;
-	//	}
-	//	tempVec.erase(tempVec.begin() + idx);
-	//	
-	//}
-	//6. Sample the goal. If there's a clear path, might as well try
     m_totalSolveTime += ElapsedTime(&clk);
 }
 
