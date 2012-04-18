@@ -184,12 +184,10 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 
 	if(shouldPickRand)
 	{
-		cout<<"CHRIS: PICKING RANDOM OBSTACLE!"<<endl;
 		obsIdx = PseudoRandomUniformReal(0,m_simulator->GetNrObstacles()-1);
 	}
 	else
 	{
-		cout<<"CHRIS: PICKING WEIGHTED OBSTACLE!"<<endl;
 		obsIdx = pickWeightedObstacle();
 
 	}	
@@ -229,7 +227,6 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 		shouldPickRand = !shouldPickRand;
 		failCount = 0;
 	}
-	cout<<"CHRIS: FAIL COUNT IS: "<<failCount<<", and is rand: "<<shouldPickRand<<endl;
 
 	//So randomly pick a vertex and keep going through until we are able to add one
 	//for(int i=0;i<currSize && !isAdded;i++)
@@ -249,8 +246,6 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 	//	tempVec.erase(tempVec.begin() + idx);
 	//	
 	//}
-
-	cout<<endl<<endl<<"CHRIS: End of my approach, total num vertexs"<<m_vertices.size()<<endl;
 	//6. Sample the goal. If there's a clear path, might as well try
     m_totalSolveTime += ElapsedTime(&clk);
 }
