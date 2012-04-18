@@ -206,7 +206,22 @@ void MotionPlanner::ExtendMyApproach_Chris(void)
 	//5. Uniformly pick a vertex until either all vertexs are chosen or one has been added 
 	bool isAdded = false;
 	
-	int vid = pickWeightedRandomIdx();
+	//int vid = pickWeightedRandomIdx();
+	double distance = -1;
+	int vid = 0;
+	for(int i=0;i<m_vertices.size();i++)
+	{
+		double vertexX = m_vertices[i]->m_state[0];
+		double vertexY = m_vertices[i]->m_state[1];
+		double currentDistance  = sqrt( pow(sto[0]-vertexX,2)+pow(sto[1]-vertexY,2));
+
+		if(distance == -1 ||currentDistance <distance)
+		{
+			distance = currentDistance;
+			vid = i;
+		}
+
+	}
 
 	//If we were able to add the vertex, see if we can get to the goal
 	if(ExtendTree(vid,sto))
