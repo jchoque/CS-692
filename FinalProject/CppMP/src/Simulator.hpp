@@ -23,7 +23,10 @@ public:
 	{
 	    STATE_X = 0,
 	    STATE_Y = 1,
-	    STATE_NR_DIMS = 2
+		ORIENTATION_IN_RADS =2,
+		TRANS_VELOCITY = 3,
+		STEERING_VELOCITY =4,
+	    STATE_NR_DIMS = 5
 	};
 
     void SetupFromFile(const char fname[]);

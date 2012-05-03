@@ -68,15 +68,9 @@ void Graphics::HandleEventOnTimer(void)
 	{
 		switch(m_method)
 		{
-		case 1: m_planner->ExtendRandom();
+		case 1: //TODO: This is where extend RRT should go
+			m_planner->ExtendRRT();
 			break;
-		case 2: m_planner->ExtendRRT();
-			break;
-		case 3: m_planner->ExtendEST();
-			break;
-		case 4: m_planner->ExtendMyApproach_Chris();
-			break;
-		case 5: m_planner->ExtendMyApproach_Brian();
 		}
 	}
 	if(!m_planner->IsProblemSolved())

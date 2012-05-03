@@ -3,6 +3,7 @@
 
 #include "Simulator.hpp"
 
+
 struct Vertex
 {
     enum
@@ -28,16 +29,7 @@ public:
             
     ~MotionPlanner(void);
 
-    void ExtendRandom(void);
-
     void ExtendRRT(void);
-
-    void ExtendEST(void);
-
-    void ExtendMyApproach_Chris(void);
-	
-	void ExtendMyApproach_Brian(void);
-    
         
 protected:
 
@@ -71,8 +63,7 @@ protected:
 	int failCount;
 
 	int pickWeightedRandomIdx();
-	int pickWeightedObstacle();
-
+	
     bool IsProblemSolved(void)
     {
 	return m_vidAtGoal >= 0;
