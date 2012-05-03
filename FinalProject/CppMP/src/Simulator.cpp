@@ -1,6 +1,11 @@
 #include "Simulator.hpp"
 #include <cstring>
 
+double Simulator::MIN_VELOCITY = -5;
+double Simulator::MAX_VELOCITY = 5;
+double Simulator::MIN_ANGLE_VELOCITY = -M_PI/4;
+double Simulator::MAX_ANGLE_VELOCITY = M_PI/4;
+
 Simulator::Simulator(void)
 {
     m_circles.push_back(-20);

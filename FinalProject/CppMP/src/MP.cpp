@@ -99,6 +99,7 @@ void MotionPlanner::ExtendRRT(void)
 
 	//1. Sample state
 	double * sampleState = new double[Simulator::STATE_NR_DIMS];
+	m_simulator->SampleState(sampleState);
 	
 	//2. Check to see if the state is valid
 

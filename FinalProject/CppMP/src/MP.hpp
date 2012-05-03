@@ -69,11 +69,6 @@ protected:
 	return m_vidAtGoal >= 0;
     }
 
-	double convertDegsToRads(double pAngleInDegs)
-	{
-		return pAngleInDegs * (180/M_PI);
-	}
-
     void GetPathFromInitToGoal(std::vector<int> *path) const;
 
     void AddVertex(Vertex * const v);

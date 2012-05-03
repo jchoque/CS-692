@@ -23,11 +23,16 @@ public:
 	{
 	    STATE_X = 0,
 	    STATE_Y = 1,
-		ORIENTATION_IN_RADS =2,
-		TRANS_VELOCITY = 3,
-		STEERING_VELOCITY =4,
+		STATE_ORIENTATION_IN_RADS =2,
+		STATE_TRANS_VELOCITY = 3,
+		STATE_STEERING_VELOCITY =4,
 	    STATE_NR_DIMS = 5
 	};
+
+	static double MIN_VELOCITY;
+	static double MAX_VELOCITY;
+	static double MIN_ANGLE_VELOCITY;
+	static double MAX_ANGLE_VELOCITY;
 
     void SetupFromFile(const char fname[]);
 
@@ -116,8 +121,11 @@ public:
 
     void SampleState(double s[]) const
     {
-	s[0] = PseudoRandomUniformReal(m_bbox[0], m_bbox[2]);
-	s[1] = PseudoRandomUniformReal(m_bbox[1], m_bbox[3]);
+		s[STATE_X] = PseudoRandomUniformReal(m_bbox[0], m_bbox[2]);
+		s[STATE_Y] = PseudoRandomUniformReal(m_bbox[1], m_bbox[3]);
+		s[STATE_ORIENTATION_IN_RADS] = PseudoRandomRadian();
+		s[STATE_TRANS_VELOCITY] = PseudoRandomUniformReal(MIN_VELOCITY, MAX_VELOCITY);
+		s[STATE_STEERING_VELOCITY] = PseudoRandomUniformReal(MIN_ANGLE_VELOCITY, MAX_ANGLE_VELOCITY);
     }
     
 
