@@ -11,7 +11,7 @@
 #endif
 
 Graphics *m_graphics = NULL;
-
+double TRIANGLE_SIZE=0.5;
 Graphics::Graphics(const char fname[]) 
 {
     m_simulator.SetupFromFile(fname);
@@ -236,6 +236,14 @@ void Graphics::HandleEventOnDisplay(void)
 	    glVertex2dv(m_planner->m_vertices[m_planner->m_vertices[i]->m_parent]->m_state);
 	}
 	glEnd();
+
+	// Draw the triangle
+	glBegin(GL_TRIANGLES);
+	glColor3f(1,0,0);   	//sets the colour to green
+    glVertex3f(TRIANGLE_SIZE,TRIANGLE_SIZE,0);  //specifies the first vertex of our triangle
+    glVertex3f(-TRIANGLE_SIZE,TRIANGLE_SIZE,0);   //specifies the second vertex of our triangle
+    glVertex3f(TRIANGLE_SIZE,-TRIANGLE_SIZE,0);   //specifies the third vertex of our triangle
+	glEnd();
     }
 }
 
@@ -248,6 +256,7 @@ void Graphics::DrawCircle2D(const double cx, const double cy, const double r)
     glBegin(GL_POLYGON);
     for(int i = 0; i <= nsides; i++)
 	glVertex2d(cx + r * cos(i * angle), cy + r * sin(i * angle));
+	
     glEnd();	
 }
 
