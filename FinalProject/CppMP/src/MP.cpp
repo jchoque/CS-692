@@ -20,6 +20,7 @@ MotionPlanner::MotionPlanner(Simulator * const simulator)
     vinit->m_nchildren= 0;    
     vinit->m_state[0] = m_simulator->GetRobotCenterX();
     vinit->m_state[1] = m_simulator->GetRobotCenterY();
+	m_simulator->SetRobotTheta(0);
 
     AddVertex(vinit);
     m_vidAtGoal = -1;

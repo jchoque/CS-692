@@ -26,7 +26,8 @@ public:
 		STATE_ORIENTATION_IN_RADS =2,
 		STATE_TRANS_VELOCITY = 3,
 		STATE_STEERING_VELOCITY =4,
-	    STATE_NR_DIMS = 5
+	    STATE_NR_DIMS = 5,
+		SIZE=6
 	};
 
 	static double MIN_VELOCITY;
@@ -100,12 +101,22 @@ public:
     {
 	return GetDistanceFromRobotCenterToGoal() <= GetGoalRadius();
     }
+	 
+	double GetRobotTheta()
+	{
+		return m_state[STATE_ORIENTATION_IN_RADS];
+	}
 
     void SetRobotState(const double s[])
     {
-	SetRobotCenter(s[0], s[1]);
-    }
+		SetRobotCenter(s[0], s[1]);
+	}
     
+	void SetRobotTheta(double theta)
+	{
+		m_state[STATE_ORIENTATION_IN_RADS] = theta;
+	}
+
     void SetRobotCenter(const double x, const double y)
     {
 	m_circles[0] = x;
@@ -139,7 +150,7 @@ protected:
     std::vector<double> m_circles;
     double              m_distOneStep;
     double              m_bbox[4];
-
+	double              m_state[SIZE];
     friend class Graphics;
 };
 

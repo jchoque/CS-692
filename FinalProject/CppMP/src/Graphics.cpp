@@ -244,16 +244,29 @@ void Graphics::HandleEventOnDisplay(void)
 	}
 	glEnd();
 
-	// Draw the triangle
-	glBegin(GL_TRIANGLES);
-	glColor3f(1,0,0);   	//sets the colour to green
-    glVertex3f(TRIANGLE_SIZE,TRIANGLE_SIZE,0);  //specifies the first vertex of our triangle
-    glVertex3f(-TRIANGLE_SIZE,TRIANGLE_SIZE,0);   //specifies the second vertex of our triangle
-    glVertex3f(TRIANGLE_SIZE,-TRIANGLE_SIZE,0);   //specifies the third vertex of our triangle
-	glEnd();
+	DrawPointer();
     }
 }
 
+void Graphics::DrawPointer()
+{
+	double startPoint[2];
+	double endPoint[2];
+	startPoint[0] = m_simulator.GetRobotCenterX();
+	startPoint[1] = m_simulator.GetRobotCenterY();
+	double theta = m_simulator.GetRobotTheta() * 3.14/180;
+	
+	endPoint[0] = startPoint[0] + (m_simulator.GetRobotRadius() + 1) * sin(theta);
+	endPoint[1] = startPoint[1] + (m_simulator.GetRobotRadius() + 1) * cos(theta);
+		
+	glColor3f(0,1,0);
+	glLineWidth(3);
+
+	glBegin(GL_LINES);
+	glVertex2dv(startPoint);
+	glVertex2dv(endPoint);
+	glEnd();
+}
 
 void Graphics::DrawCircle2D(const double cx, const double cy, const double r)
 {
