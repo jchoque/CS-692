@@ -102,15 +102,20 @@ void MotionPlanner::ExtendRRT(void)
 	m_simulator->SampleState(sampleState);
 	
 	//2. Check to see if the state is valid
+	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
 
-	//3. Find the nearest configuration based on distance.
-	//TODO: Need to find out what a good distance metric is. Do we use Euclidean, or is there some other way to check?
+	if(m_simulator->IsValidState())
+	{
 
-	//4. Create a local trajectoy based on the closest configuration and the sampled configuration. 
+		int vid = getClosestVid(sampleState);
+		//3. Find the nearest configuration based on distance.
+			//TODO: Need to find out what a good distance metric is. Do we use Euclidean, or is there some other way to check?
 
-	//5. If the sub trajectory from [0, step] is valid, add the trajectory from [0, step] 
-		//Finally check to see if we have found an answer
+		//4. Create a local trajectoy based on the closest configuration and the sampled configuration. 
 
+		//5. If the sub trajectory from [0, step] is valid, add the trajectory from [0, step] 
+			//Finally check to see if we have found an answer
+	}
 	m_totalSolveTime += ElapsedTime(&clk);    
 }
 

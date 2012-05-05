@@ -35,7 +35,7 @@ static inline double PseudoRandomUniformReal(const double min, const double max)
 
 static inline double convertDegsToRads(double pAngleInDegs)
 {
-	return pAngleInDegs * (180/M_PI);
+	return pAngleInDegs * (M_PI/180);
 }
 
 static inline double PseudoRandomRadian(void)

@@ -38,16 +38,24 @@ protected:
 		return 1.0/(1.0*pow((double)m_vertices[pVertex]->m_nchildren,2));
 	}
 
+	double calculateDistance(double sto[], double vertexState [])
+	{
+		return sqrt( pow(sto[Simulator::STATE_X]-vertexState[Simulator::STATE_X],2) + pow(sto[Simulator::STATE_Y]-vertexState[Simulator::STATE_Y],2)) +
+			abs(sto[Simulator::STATE_ORIENTATION_IN_RADS]-vertexState[Simulator::STATE_ORIENTATION_IN_RADS]) +
+			abs(sto[Simulator::STATE_STEERING_VELOCITY]-vertexState[Simulator::STATE_STEERING_VELOCITY]) +
+			abs(sto[Simulator::STATE_TRANS_VELOCITY] -vertexState[Simulator::STATE_TRANS_VELOCITY]);
+
+	}
+
 	int getClosestVid(double sto [])
 	{
 		int currMinIdx = 0;
-		double currMinDistance = sqrt( pow(sto[0]-m_vertices[0]->m_state[0],2) + pow(sto[1]-m_vertices[0]->m_state[1],2));
+		double currMinDistance = calculateDistance(sto, m_vertices[0]->m_state);
+		
 		for(int i=0;i<m_vertices.size();i++)
 		{
-			double vertexX = m_vertices[i]->m_state[0];
-			double vertexY = m_vertices[i]->m_state[1];
-
-			double tempDistance = sqrt( pow(sto[0]-vertexX,2) + pow(sto[1]-vertexY,2));
+		
+			double tempDistance = calculateDistance(sto, m_vertices[i]->m_state);
 
 			if(tempDistance < currMinDistance)
 			{
