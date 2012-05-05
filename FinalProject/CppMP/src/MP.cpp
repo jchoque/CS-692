@@ -106,11 +106,65 @@ void MotionPlanner::ExtendRRT(void)
 
 	if(m_simulator->IsValidState())
 	{
-
-		int vid = getClosestVid(sampleState);
 		//3. Find the nearest configuration based on distance.
-			//TODO: Need to find out what a good distance metric is. Do we use Euclidean, or is there some other way to check?
+		int vid = getClosestVid(sampleState);
 
+		double tempObj[Simulator::STATE_NR_DIMS];
+		for(int i=0;i<Simulator::STATE_NR_DIMS; i++)
+		{
+			tempObj[i] = m_vertices[vid]->m_state[i];
+		}
+
+		double deltat = .1;
+		double u = PseudoRandomUniformReal(Simulator::MIN_VELOCITY,Simulator::MAX_VELOCITY);
+		double v = PseudoRandomUniformReal(Simulator::MIN_ANGLE_VELOCITY, Simulator::MAX_ANGLE_VELOCITY);
+		for(double i=0;i<5;i++)
+		{
+			double deltaX = deltat* tempObj[Simulator::STATE_TRANS_VELOCITY]*cos(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
+			double deltaY = deltat*tempObj[Simulator::STATE_TRANS_VELOCITY]*sin(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
+			double deltatheta = deltat*(tempObj[Simulator::STATE_TRANS_VELOCITY]/m_simulator->GetRobotRadius()) * tan(tempObj[Simulator::STATE_STEERING_VELOCITY]);
+			double deltaSpeed = deltat * u;
+			double deltaAngleVel = deltat*v;
+
+
+			double testState[Simulator::STATE_NR_DIMS];
+			testState[Simulator::STATE_X] = tempObj[Simulator::STATE_X]+deltaX;
+			testState[Simulator::STATE_Y] = tempObj[Simulator::STATE_Y]+deltaY;
+			testState[Simulator::STATE_ORIENTATION_IN_RADS] = tempObj[Simulator::STATE_ORIENTATION_IN_RADS]+deltatheta;
+			testState[Simulator::STATE_TRANS_VELOCITY] = tempObj[Simulator::STATE_TRANS_VELOCITY]+deltaSpeed;
+			testState[Simulator::STATE_STEERING_VELOCITY] = tempObj[Simulator::STATE_STEERING_VELOCITY]+deltaAngleVel;
+
+			m_simulator->SetRobotState(testState);
+			if(!m_simulator->IsValidState())
+			{
+				break;
+			}
+			else
+			{
+				//Add it! 
+				Vertex *aVertex = new Vertex();
+				
+				for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
+				{
+					aVertex->m_state[i] = testState[i];
+					tempObj[i] = testState[i];
+				}
+
+				aVertex->m_nchildren =0;
+				aVertex->m_parent = 0;
+
+				if(aVertex->m_parent<0 || aVertex->m_parent>=m_vertices.size())
+				{
+					cout<<"CHRIS: REALLY?"<<endl;
+				}
+				aVertex->m_type = 0;
+				
+				AddVertex(aVertex);
+				
+
+			}
+		}
+	
 		//4. Create a local trajectoy based on the closest configuration and the sampled configuration. 
 
 		//5. If the sub trajectory from [0, step] is valid, add the trajectory from [0, step] 

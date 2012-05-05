@@ -1,5 +1,5 @@
 #include "Graphics.hpp"
-
+#include <iostream>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #elif defined _WIN32
@@ -64,7 +64,8 @@ void Graphics::HandleEventOnTimer(void)
 {
     if(m_run && m_method >= 1 && m_method <= 5)
     {
-	for(int i = 0; i < 1000 && !m_planner->IsProblemSolved(); ++i)
+	//for(int i = 0; i < 1000 && !m_planner->IsProblemSolved(); ++i)
+		for(int i=0; i<50 && !m_planner->IsProblemSolved(); ++i)
 	{
 		switch(m_method)
 		{
@@ -233,6 +234,12 @@ void Graphics::HandleEventOnDisplay(void)
 	for(int i = 1; i < n; ++i)
 	{
 	    glVertex2dv(m_planner->m_vertices[i]->m_state);
+
+		int parentIdx = m_planner->m_vertices[i]->m_parent;
+		if(parentIdx<0 || parentIdx >=m_planner->m_vertices.size())
+		{
+			std::cout<<"CHRIS: REALLY??"<<std::endl;
+		}
 	    glVertex2dv(m_planner->m_vertices[m_planner->m_vertices[i]->m_parent]->m_state);
 	}
 	glEnd();

@@ -17,6 +17,15 @@ struct Vertex
     double m_state[Simulator::STATE_NR_DIMS];
     int    m_type;
     int    m_nchildren;
+
+	double * getXY()
+	{
+		double *xy = new double[2];
+		xy[0] =m_state[0];
+		xy[1] =m_state[1];
+
+		return xy;
+	}
     
 };
 
