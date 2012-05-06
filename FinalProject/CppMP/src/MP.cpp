@@ -44,8 +44,10 @@ bool MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 	double currentLocY = m_simulator->GetRobotCenterY();
 
 	//This is our start position
-	double stepSize = m_simulator->GetDistOneStep();
 
+	//For some reason this is getting set to 1, even though I set it to something else..weird
+	//double stepSize = m_simulator->GetDistOneStep();
+	double stepSize = 0.1;
 	bool inObstacle = false;
 
 	double distance = 10000;
@@ -123,8 +125,8 @@ void MotionPlanner::ExtendRRT(void)
 		int vid = getClosestVid(sampleState);
 
 		double tempObj[Simulator::STATE_NR_DIMS];
-		double deltat = m_simulator->GetDistOneStep();
-
+		//double deltat = m_simulator->GetDistOneStep();
+		double deltat = 0.1;
 		//Find the best out of many controls
 		double bestDistance = DBL_MAX;
 		double bestControlU = -1;

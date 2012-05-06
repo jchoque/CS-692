@@ -147,10 +147,14 @@ public:
 
 protected:    
     std::vector<double> m_circles;
-    double              m_distOneStep;
+
     double              m_bbox[4];
 	double              m_state[STATE_NR_DIMS];
     friend class Graphics;
+
+
+private:
+	    double  m_distOneStep;
 };
 
 #endif
