@@ -26,8 +26,7 @@ public:
 		STATE_ORIENTATION_IN_RADS =2,
 		STATE_TRANS_VELOCITY = 3,
 		STATE_STEERING_VELOCITY =4,
-	    STATE_NR_DIMS = 5,
-		SIZE=6
+	    STATE_NR_DIMS = 5
 	};
 
 	static double MIN_VELOCITY;
@@ -150,7 +149,7 @@ protected:
     std::vector<double> m_circles;
     double              m_distOneStep;
     double              m_bbox[4];
-	double              m_state[SIZE];
+	double              m_state[STATE_NR_DIMS];
     friend class Graphics;
 };
 
