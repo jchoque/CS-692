@@ -56,6 +56,7 @@ protected:
 
 	}
 
+
 	int getClosestVid(double sto [])
 	{
 		int currMinIdx = 0;
@@ -90,8 +91,7 @@ protected:
 
     void AddVertex(Vertex * const v);
 
-    bool ExtendTree(const int    vid,
-		    const double sto[]);
+    bool ExtendTree(const int    vid,double u, double v, double pSubGoal[]);
     
     Simulator            *m_simulator;
     std::vector<Vertex *> m_vertices;

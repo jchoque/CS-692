@@ -37,58 +37,70 @@ MotionPlanner::~MotionPlanner(void)
 }
 
 
-bool MotionPlanner::ExtendTree(const int    vid, 
-			       const double sto[])
+bool MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal[])
 {
 
+	double currentLocX = m_simulator->GetRobotCenterX();
+	double currentLocY = m_simulator->GetRobotCenterY();
+
 	//This is our start position
-	double vertexX = m_vertices[vid]->m_state[0];
-	double vertexY = m_vertices[vid]->m_state[1];	
 	double stepSize = m_simulator->GetDistOneStep();
-	double distance = sqrt(pow(vertexX - sto[0], 2) + pow(vertexY - sto[1], 2));
+
 	bool inObstacle = false;
-	
-	double deltaX = (sto[0]-vertexX)/distance;
-	double deltaY = (sto[1]-vertexY)/distance;
-	// While we don't hit an obstacle and our distance is greater than 0
-	// walk down this vertex path to see if there are any obstacles or the 
-	// goal
-	double nextX=vertexX;
-	double nextY=vertexY;
-	while (!inObstacle && distance >=stepSize){
-		
-		//This will first "normalize" the vector and will increase it by a single step
-		nextX += (deltaX * stepSize);
-		nextY += (deltaY * stepSize);
-		
+
+	double distance = 10000;
+	double stepVertex[Simulator::STATE_NR_DIMS];
+	stepVertex[Simulator::STATE_X] = m_vertices[vid]->m_state[Simulator::STATE_X];
+	stepVertex[Simulator::STATE_Y] = m_vertices[vid]->m_state[Simulator::STATE_Y];
+	stepVertex[Simulator::STATE_ORIENTATION_IN_RADS] = m_vertices[vid]->m_state[Simulator::STATE_ORIENTATION_IN_RADS];
+	stepVertex[Simulator::STATE_TRANS_VELOCITY] = m_vertices[vid]->m_state[Simulator::STATE_TRANS_VELOCITY];
+	stepVertex[Simulator::STATE_STEERING_VELOCITY] = m_vertices[vid]->m_state[Simulator::STATE_STEERING_VELOCITY];
+	int parent = vid;
+	int iters =0;
+	while (!inObstacle && distance >=stepSize && iters<100)
+	{
+		iters++;
+		double deltaX = stepSize* stepVertex[Simulator::STATE_TRANS_VELOCITY]*cos(stepVertex[Simulator::STATE_ORIENTATION_IN_RADS]);
+		double deltaY = stepSize*stepVertex[Simulator::STATE_TRANS_VELOCITY]*sin(stepVertex[Simulator::STATE_ORIENTATION_IN_RADS]);
+		double deltatheta = stepSize*(stepVertex[Simulator::STATE_TRANS_VELOCITY]/m_simulator->GetRobotRadius()) * tan(stepVertex[Simulator::STATE_STEERING_VELOCITY]);
+		double deltaSpeed = stepSize * u;
+		double deltaAngleVel = stepSize*v;
+		double testState[Simulator::STATE_NR_DIMS];
+		stepVertex[Simulator::STATE_X]+=deltaX;
+		stepVertex[Simulator::STATE_Y]+=deltaY;
+		stepVertex[Simulator::STATE_ORIENTATION_IN_RADS]+=deltatheta;
+		stepVertex[Simulator::STATE_TRANS_VELOCITY]+=deltaSpeed;
+		stepVertex[Simulator::STATE_STEERING_VELOCITY]+=deltaAngleVel;
+
 		// Set the robot location so we can determine if this is a valid state
-		m_simulator->SetRobotCenter(nextX, nextY);
+		m_simulator->SetRobotState(stepVertex);
 		
 		if (m_simulator->IsValidState()){
-			distance = sqrt(pow(nextX - sto[0], 2) + pow(nextY - sto[1], 2));
-			if (m_simulator->HasRobotReachedGoal()){
+			
+			distance = calculateDistance(stepVertex, pSubGoal);
+
+			if (m_simulator->HasRobotReachedGoal())
+			{
 				m_vidAtGoal = vid;
 				break;
 			}
+			Vertex *vertex = new Vertex();
+			for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
+			{
+				vertex->m_state[i] = stepVertex[i];
+			}
+			vertex->m_parent = parent;
+			AddVertex(vertex);
+			parent = m_vertices.size()-1;
+			currentLocX = stepVertex[Simulator::STATE_X];
+			currentLocY = stepVertex[Simulator::STATE_Y];
 		}
 		else {
 			inObstacle = true;
 			// Reset the robot to be at the previous vertex
-			m_simulator->SetRobotCenter(vertexX, vertexY);
+			m_simulator->SetRobotCenter(currentLocX, currentLocY);
 		}
 	}
-
-	// If we are not in an obstacle then we have found a valid vertex
-	// so add it to our list
-	if (!inObstacle) {
-		Vertex *vertex = new Vertex();
-		vertex->m_state[0] = nextX;
-		vertex->m_state[1] = nextY;
-		vertex->m_parent = vid;
-		AddVertex(vertex);
-		m_simulator->SetRobotCenter(nextX, nextY);
-	}
-
 	//Did we hit an obstacle? If not then we added it sucessfully. 
 	return !inObstacle;
 }
@@ -111,60 +123,61 @@ void MotionPlanner::ExtendRRT(void)
 		int vid = getClosestVid(sampleState);
 
 		double tempObj[Simulator::STATE_NR_DIMS];
-		for(int i=0;i<Simulator::STATE_NR_DIMS; i++)
-		{
-			tempObj[i] = m_vertices[vid]->m_state[i];
-		}
-
 		double deltat = .1;
-		double u = PseudoRandomUniformReal(Simulator::MIN_VELOCITY,Simulator::MAX_VELOCITY);
-		double v = PseudoRandomUniformReal(Simulator::MIN_ANGLE_VELOCITY, Simulator::MAX_ANGLE_VELOCITY);
-		for(double i=0;i<5;i++)
+
+		//Find the best out of many controls
+		double bestDistance = DBL_MAX;
+		double bestControlU = -1;
+		double bestControlV = -1;
+		for(int i=0;i<10;i++)
 		{
-			double deltaX = deltat* tempObj[Simulator::STATE_TRANS_VELOCITY]*cos(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
-			double deltaY = deltat*tempObj[Simulator::STATE_TRANS_VELOCITY]*sin(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
-			double deltatheta = deltat*(tempObj[Simulator::STATE_TRANS_VELOCITY]/m_simulator->GetRobotRadius()) * tan(tempObj[Simulator::STATE_STEERING_VELOCITY]);
-			double deltaSpeed = deltat * u;
-			double deltaAngleVel = deltat*v;
+			double u = PseudoRandomUniformReal(Simulator::MIN_VELOCITY,Simulator::MAX_VELOCITY);
+			double v = PseudoRandomUniformReal(Simulator::MIN_ANGLE_VELOCITY, Simulator::MAX_ANGLE_VELOCITY);
 
-
-			double testState[Simulator::STATE_NR_DIMS];
-			testState[Simulator::STATE_X] = tempObj[Simulator::STATE_X]+deltaX;
-			testState[Simulator::STATE_Y] = tempObj[Simulator::STATE_Y]+deltaY;
-			testState[Simulator::STATE_ORIENTATION_IN_RADS] = tempObj[Simulator::STATE_ORIENTATION_IN_RADS]+deltatheta;
-			testState[Simulator::STATE_TRANS_VELOCITY] = tempObj[Simulator::STATE_TRANS_VELOCITY]+deltaSpeed;
-			testState[Simulator::STATE_STEERING_VELOCITY] = tempObj[Simulator::STATE_STEERING_VELOCITY]+deltaAngleVel;
-
-			m_simulator->SetRobotState(testState);
-			if(!m_simulator->IsValidState())
+			for(int i=0;i<Simulator::STATE_NR_DIMS; i++)
 			{
-				break;
+				tempObj[i] = m_vertices[vid]->m_state[i];
 			}
-			else
+
+			for(double i=0;i<5;i++)	
 			{
-				//Add it! 
-				Vertex *aVertex = new Vertex();
-				
-				for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
+
+				double deltaX = deltat* tempObj[Simulator::STATE_TRANS_VELOCITY]*cos(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
+				double deltaY = deltat*tempObj[Simulator::STATE_TRANS_VELOCITY]*sin(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
+				double deltatheta = deltat*(tempObj[Simulator::STATE_TRANS_VELOCITY]/m_simulator->GetRobotRadius()) * tan(tempObj[Simulator::STATE_STEERING_VELOCITY]);
+				double deltaSpeed = deltat * u;
+				double deltaAngleVel = deltat*v;
+				double testState[Simulator::STATE_NR_DIMS];
+				testState[Simulator::STATE_X] = tempObj[Simulator::STATE_X]+deltaX;
+				testState[Simulator::STATE_Y] = tempObj[Simulator::STATE_Y]+deltaY;
+				testState[Simulator::STATE_ORIENTATION_IN_RADS] = tempObj[Simulator::STATE_ORIENTATION_IN_RADS]+deltatheta;
+				testState[Simulator::STATE_TRANS_VELOCITY] = tempObj[Simulator::STATE_TRANS_VELOCITY]+deltaSpeed;
+				testState[Simulator::STATE_STEERING_VELOCITY] = tempObj[Simulator::STATE_STEERING_VELOCITY]+deltaAngleVel;
+
+				m_simulator->SetRobotState(testState);
+				if(!m_simulator->IsValidState())
 				{
-					aVertex->m_state[i] = testState[i];
-					tempObj[i] = testState[i];
+					break;
 				}
-
-				aVertex->m_nchildren =0;
-				aVertex->m_parent = 0;
-
-				if(aVertex->m_parent<0 || aVertex->m_parent>=m_vertices.size())
+				else
 				{
-					cout<<"CHRIS: REALLY?"<<endl;
+					for(int j=0;j<Simulator::STATE_NR_DIMS; j++)
+					{
+						tempObj[j] = testState[j];
+					}
 				}
-				aVertex->m_type = 0;
-				
-				AddVertex(aVertex);
-				
+			}
 
+			double tempDistance = calculateDistance(tempObj,sampleState);
+			if(tempDistance<bestDistance)
+			{
+				bestControlU = u;
+				bestControlV = v;
+				bestDistance = tempDistance;
 			}
 		}
+
+		ExtendTree(vid, bestControlU, bestControlV, sampleState);
 	
 		//4. Create a local trajectoy based on the closest configuration and the sampled configuration. 
 
