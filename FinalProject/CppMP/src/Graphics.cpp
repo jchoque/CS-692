@@ -95,6 +95,13 @@ void Graphics::HandleEventOnTimer(void)
 	    m_pathPos = 0;
 	
 	m_simulator.SetRobotState(m_planner->m_vertices[m_path[m_pathPos]]->m_state);
+		double * state = (m_planner->m_vertices[m_path[m_pathPos]]->m_state);
+	printf("\n-CurrentState[x=%4.3f, y=%4.3f,oreintation=%4.3f vel=%4.3f, angleVel=%4.3f]",
+		state[Simulator::STATE_X], 
+		state[Simulator::STATE_Y],
+		state[Simulator::STATE_ORIENTATION_IN_RADS],
+		state[Simulator::STATE_TRANS_VELOCITY], 
+		state[Simulator::STATE_STEERING_VELOCITY]);
 #ifdef _WIN32
 	Sleep(100);
 #endif
@@ -194,7 +201,7 @@ void Graphics::HandleEventOnKeyPress(const int key)
 
 void Graphics::HandleEventOnDisplay(void)
 {
-//draw bounding box
+	//draw bounding box
     const double *bbox = m_graphics->m_simulator.m_bbox;
     
     glColor3f(0, 0, 1);    
@@ -206,46 +213,43 @@ void Graphics::HandleEventOnDisplay(void)
     glVertex2d(bbox[0], bbox[3]);
     glEnd();
     
-//draw robot, goal, and obstacles
+	//draw robot, goal, and obstacles
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
     glColor3f(1, 0, 0);
     DrawCircle2D(m_simulator.GetRobotCenterX(), m_simulator.GetRobotCenterY(), m_simulator.GetRobotRadius());
     glColor3f(0, 1, 0);
     DrawCircle2D(m_simulator.GetGoalCenterX(), m_simulator.GetGoalCenterY(), m_simulator.GetGoalRadius());
     glColor3f(0, 0, 1);
     for(int i = 0; i < m_simulator.GetNrObstacles(); ++i)
-	DrawCircle2D(m_simulator.GetObstacleCenterX(i),
-		     m_simulator.GetObstacleCenterY(i),
-		     m_simulator.GetObstacleRadius(i));
-
-//draw planner vertices
+	{
+		DrawCircle2D(m_simulator.GetObstacleCenterX(i),m_simulator.GetObstacleCenterY(i),m_simulator.GetObstacleRadius(i));
+	}
+	//draw planner vertices
     if(m_drawPlannerVertices)
     {
-	glPointSize(4.0);
-	
-	const int n = m_planner->m_vertices.size();
-	glColor3f(0.6, 0.8, 0.3);	
-	glBegin(GL_POINTS);	
-	for(int i = 0; i < n; ++i)
-	    glVertex2dv(m_planner->m_vertices[i]->m_state);
-	glEnd();
-	glBegin(GL_LINES);	
-	for(int i = 1; i < n; ++i)
-	{
-	    glVertex2dv(m_planner->m_vertices[i]->m_state);
-
-		int parentIdx = m_planner->m_vertices[i]->m_parent;
-		if(parentIdx<0 || parentIdx >=m_planner->m_vertices.size())
+		glPointSize(4.0);
+		const int n = m_planner->m_vertices.size();
+		glColor3f(0.6, 0.8, 0.3);	
+		glBegin(GL_POINTS);	
+		
+		for(int i = 0; i < n; ++i)
 		{
-			std::cout<<"CHRIS: REALLY??"<<std::endl;
+			glVertex2dv(m_planner->m_vertices[i]->m_state);
 		}
-	    glVertex2dv(m_planner->m_vertices[m_planner->m_vertices[i]->m_parent]->m_state);
-	}
-	glEnd();
+		glEnd();
+		glBegin(GL_LINES);	
+	
+		for(int i = 1; i < n; ++i)
+		{
+			glVertex2dv(m_planner->m_vertices[i]->m_state);
+			glVertex2dv(m_planner->m_vertices[m_planner->m_vertices[i]->m_parent]->m_state);
+		}
+		glEnd();
 
-	DrawPointer();
+		DrawPointer();
     }
+
+
 }
 
 void Graphics::DrawPointer()
