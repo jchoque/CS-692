@@ -96,7 +96,7 @@ void Graphics::HandleEventOnTimer(void)
 	
 	m_simulator.SetRobotState(m_planner->m_vertices[m_path[m_pathPos]]->m_state);
 #ifdef _WIN32
-	Sleep(500);
+	Sleep(100);
 #endif
 	++m_pathPos;
     }

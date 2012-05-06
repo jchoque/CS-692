@@ -59,7 +59,7 @@ bool MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 	stepVertex[Simulator::STATE_STEERING_VELOCITY] = m_vertices[vid]->m_state[Simulator::STATE_STEERING_VELOCITY];
 	int parent = vid;
 	int iters =0;
-	while (!inObstacle && distance >=stepSize && iters<100)
+	while (!inObstacle && distance >=stepSize && iters<1000)
 	{
 		iters++;
 		double deltaX = stepSize* stepVertex[Simulator::STATE_TRANS_VELOCITY]*cos(stepVertex[Simulator::STATE_ORIENTATION_IN_RADS]);
@@ -70,9 +70,9 @@ bool MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 		double testState[Simulator::STATE_NR_DIMS];
 		stepVertex[Simulator::STATE_X]+=deltaX;
 		stepVertex[Simulator::STATE_Y]+=deltaY;
-		stepVertex[Simulator::STATE_ORIENTATION_IN_RADS]+=deltatheta;
-		stepVertex[Simulator::STATE_TRANS_VELOCITY]+=deltaSpeed;
-		stepVertex[Simulator::STATE_STEERING_VELOCITY]+=deltaAngleVel;
+		stepVertex[Simulator::STATE_ORIENTATION_IN_RADS] = clampAngle(stepVertex[Simulator::STATE_ORIENTATION_IN_RADS]+deltatheta);
+		stepVertex[Simulator::STATE_TRANS_VELOCITY] = clampValue(stepVertex[Simulator::STATE_TRANS_VELOCITY]+deltaSpeed, Simulator::MIN_VELOCITY, Simulator::MAX_VELOCITY);
+		stepVertex[Simulator::STATE_STEERING_VELOCITY] = clampValue(stepVertex[Simulator::STATE_STEERING_VELOCITY]+deltaAngleVel,Simulator::MIN_ANGLE_VELOCITY, Simulator::MAX_ANGLE_VELOCITY);
 
 		// Set the robot location so we can determine if this is a valid state
 		m_simulator->SetRobotState(stepVertex);
@@ -133,8 +133,8 @@ void MotionPlanner::ExtendRRT(void)
 		double bestControlV = -1;
 		for(int i=0;i<10;i++)
 		{
-			double u = PseudoRandomUniformReal(Simulator::MIN_VELOCITY,Simulator::MAX_VELOCITY);
-			double v = PseudoRandomUniformReal(Simulator::MIN_ANGLE_VELOCITY, Simulator::MAX_ANGLE_VELOCITY);
+			double u = PseudoRandomUniformReal(Simulator::MIN_ACCELERATION,Simulator::MAX_ACCELERATION);
+			double v = PseudoRandomUniformReal(Simulator::MIN_ANGLE_ACCELERATION, Simulator::MAX_ANGLE_ACCELERATION);
 
 			for(int i=0;i<Simulator::STATE_NR_DIMS; i++)
 			{
@@ -160,9 +160,9 @@ void MotionPlanner::ExtendRRT(void)
 				
 				tempObj[Simulator::STATE_X]+=deltaX;
 				tempObj[Simulator::STATE_Y]+=deltaY;
-				tempObj[Simulator::STATE_ORIENTATION_IN_RADS]+=deltatheta;
-				tempObj[Simulator::STATE_TRANS_VELOCITY]+=deltaSpeed;
-				tempObj[Simulator::STATE_STEERING_VELOCITY]+=deltaAngleVel;
+				tempObj[Simulator::STATE_ORIENTATION_IN_RADS] = clampAngle(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]+deltatheta);
+				tempObj[Simulator::STATE_TRANS_VELOCITY] = clampValue(tempObj[Simulator::STATE_TRANS_VELOCITY]+deltaSpeed,Simulator::MIN_VELOCITY, Simulator::MAX_VELOCITY);
+				tempObj[Simulator::STATE_STEERING_VELOCITY] = clampValue(tempObj[Simulator::STATE_STEERING_VELOCITY]+deltaAngleVel, Simulator::MIN_ANGLE_VELOCITY, Simulator::MAX_ANGLE_VELOCITY);
 
 				m_simulator->SetRobotState(tempObj);
 				if(!m_simulator->IsValidState())
@@ -185,10 +185,6 @@ void MotionPlanner::ExtendRRT(void)
 
 			ExtendTree(vid, bestControlU, bestControlV, sampleState);
 		}
-		//4. Create a local trajectoy based on the closest configuration and the sampled configuration. 
-
-		//5. If the sub trajectory from [0, step] is valid, add the trajectory from [0, step] 
-			//Finally check to see if we have found an answer
 	}
 	m_totalSolveTime += ElapsedTime(&clk);    
 }

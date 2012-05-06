@@ -56,6 +56,29 @@ protected:
 
 	}
 
+	double clampValue(double pValue, double pMinValue, double pMaxValue)
+	{
+		double returnValue = pValue;
+		if(pValue <pMinValue)
+		{
+			returnValue = pMinValue;
+		}
+		else if(pValue >pMaxValue)
+		{
+			returnValue = pMaxValue;
+		}
+
+		return returnValue;
+	}
+	double clampAngle(double pAngle)
+	{
+		if(pAngle >=360)
+			return pAngle-360;
+		if(pAngle <=0)
+			return pAngle+360;
+		return pAngle;
+	}
+
 
 	int getClosestVid(double sto [])
 	{

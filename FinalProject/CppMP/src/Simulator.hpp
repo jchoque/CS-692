@@ -33,6 +33,10 @@ public:
 	static double MAX_VELOCITY;
 	static double MIN_ANGLE_VELOCITY;
 	static double MAX_ANGLE_VELOCITY;
+	static double MIN_ACCELERATION;
+	static double MAX_ACCELERATION;
+	static double MIN_ANGLE_ACCELERATION;
+	static double MAX_ANGLE_ACCELERATION;
 
     void SetupFromFile(const char fname[]);
 
