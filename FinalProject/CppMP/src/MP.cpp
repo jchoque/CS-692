@@ -123,7 +123,7 @@ void MotionPlanner::ExtendRRT(void)
 		int vid = getClosestVid(sampleState);
 
 		double tempObj[Simulator::STATE_NR_DIMS];
-		double deltat = .1;
+		double deltat = m_simulator->GetDistOneStep();
 
 		//Find the best out of many controls
 		double bestDistance = DBL_MAX;
@@ -139,7 +139,7 @@ void MotionPlanner::ExtendRRT(void)
 				tempObj[i] = m_vertices[vid]->m_state[i];
 			}
 
-			for(double i=0;i<5;i++)	
+			for(int j=0;j<5;j++)	
 			{
 
 				double deltaX = deltat* tempObj[Simulator::STATE_TRANS_VELOCITY]*cos(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
@@ -147,38 +147,42 @@ void MotionPlanner::ExtendRRT(void)
 				double deltatheta = deltat*(tempObj[Simulator::STATE_TRANS_VELOCITY]/m_simulator->GetRobotRadius()) * tan(tempObj[Simulator::STATE_STEERING_VELOCITY]);
 				double deltaSpeed = deltat * u;
 				double deltaAngleVel = deltat*v;
-				double testState[Simulator::STATE_NR_DIMS];
-				testState[Simulator::STATE_X] = tempObj[Simulator::STATE_X]+deltaX;
-				testState[Simulator::STATE_Y] = tempObj[Simulator::STATE_Y]+deltaY;
-				testState[Simulator::STATE_ORIENTATION_IN_RADS] = tempObj[Simulator::STATE_ORIENTATION_IN_RADS]+deltatheta;
-				testState[Simulator::STATE_TRANS_VELOCITY] = tempObj[Simulator::STATE_TRANS_VELOCITY]+deltaSpeed;
-				testState[Simulator::STATE_STEERING_VELOCITY] = tempObj[Simulator::STATE_STEERING_VELOCITY]+deltaAngleVel;
 
-				m_simulator->SetRobotState(testState);
+				double lastGoodState[Simulator::STATE_NR_DIMS];
+				//Save last good state, in case it fails
+				memcpy(lastGoodState,tempObj,Simulator::STATE_NR_DIMS);
+				for(int k=0;k<Simulator::STATE_NR_DIMS;k++)
+				{
+					lastGoodState[k] = tempObj[k];
+				}
+				
+				tempObj[Simulator::STATE_X]+=deltaX;
+				tempObj[Simulator::STATE_Y]+=deltaY;
+				tempObj[Simulator::STATE_ORIENTATION_IN_RADS]+=deltatheta;
+				tempObj[Simulator::STATE_TRANS_VELOCITY]+=deltaSpeed;
+				tempObj[Simulator::STATE_STEERING_VELOCITY]+=deltaAngleVel;
+
+				m_simulator->SetRobotState(tempObj);
 				if(!m_simulator->IsValidState())
 				{
+					memcpy(tempObj,lastGoodState,Simulator::STATE_NR_DIMS);
 					break;
 				}
-				else
+			}
+
+			if(m_simulator->IsValidState())
+			{
+				double tempDistance = calculateDistance(tempObj,sampleState);
+				if(tempDistance<bestDistance)
 				{
-					for(int j=0;j<Simulator::STATE_NR_DIMS; j++)
-					{
-						tempObj[j] = testState[j];
-					}
+					bestControlU = u;
+					bestControlV = v;
+					bestDistance = tempDistance;
 				}
 			}
 
-			double tempDistance = calculateDistance(tempObj,sampleState);
-			if(tempDistance<bestDistance)
-			{
-				bestControlU = u;
-				bestControlV = v;
-				bestDistance = tempDistance;
-			}
+			ExtendTree(vid, bestControlU, bestControlV, sampleState);
 		}
-
-		ExtendTree(vid, bestControlU, bestControlV, sampleState);
-	
 		//4. Create a local trajectoy based on the closest configuration and the sampled configuration. 
 
 		//5. If the sub trajectory from [0, step] is valid, add the trajectory from [0, step] 
