@@ -215,8 +215,7 @@ void Graphics::HandleEventOnDisplay(void)
     
 	//draw robot, goal, and obstacles
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glColor3f(1, 0, 0);
-    DrawCircle2D(m_simulator.GetRobotCenterX(), m_simulator.GetRobotCenterY(), m_simulator.GetRobotRadius());
+    
     glColor3f(0, 1, 0);
     DrawCircle2D(m_simulator.GetGoalCenterX(), m_simulator.GetGoalCenterY(), m_simulator.GetGoalRadius());
     glColor3f(0, 0, 1);
@@ -245,7 +244,8 @@ void Graphics::HandleEventOnDisplay(void)
 			glVertex2dv(m_planner->m_vertices[m_planner->m_vertices[i]->m_parent]->m_state);
 		}
 		glEnd();
-
+		glColor3f(1, 0, 0);
+		DrawCircle2D(m_simulator.GetRobotCenterX(), m_simulator.GetRobotCenterY(), m_simulator.GetRobotRadius());
 		DrawPointer();
     }
 
@@ -254,6 +254,8 @@ void Graphics::HandleEventOnDisplay(void)
 
 void Graphics::DrawPointer()
 {
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_ALWAYS);
 	double startPoint[2];
 	double endPoint[2];
 	startPoint[0] = m_simulator.GetRobotCenterX();
@@ -263,7 +265,7 @@ void Graphics::DrawPointer()
 	endPoint[0] = startPoint[0] + (m_simulator.GetRobotRadius() + 1) * sin(theta);
 	endPoint[1] = startPoint[1] + (m_simulator.GetRobotRadius() + 1) * cos(theta);
 		
-	glColor3f(0,1,0);
+	glColor3f(1,0,0);
 	glLineWidth(3);
 
 	glBegin(GL_LINES);

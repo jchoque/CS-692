@@ -111,10 +111,43 @@ void MotionPlanner::ExtendRRT(void)
 {
     Clock clk;
     StartTime(&clk);
-
+	double tooClose =  m_simulator->GetRobotRadius() * 2;
+	double tooFar =  tooClose * 10;
 	//1. Sample state
+	// Since sampling takes very little time we want to only sample vertices that are:
+	// a)  Unique points that are not very close to existing vertices because they
+	//     most likely won't provide any new paths
+	// b)  Points that are not very far from all other vertices because the 
+	//     probability of having to maneuver around multiple obstacles increases
+	//     and causes the computational time to increase
 	double * sampleState = new double[Simulator::STATE_NR_DIMS];
-	m_simulator->SampleState(sampleState);
+	bool newPoint;
+	do {
+		newPoint = true;
+		m_simulator->SampleState(sampleState);
+
+		// Check all known vertices to see if this point is relatively close to an existing vertex
+		// or if the vertex is way too far away don't even try to add it
+		double minDist = DBL_MAX;
+		for (int idx = 0; idx < m_vertices.size() && newPoint; idx++){
+			double dist = sqrt(pow(sampleState[Simulator::STATE_X] - m_vertices[idx]->m_state[Simulator::STATE_X], 2) + 
+				pow(sampleState[Simulator::STATE_Y] - m_vertices[idx]->m_state[Simulator::STATE_Y], 2));
+			if (dist < tooClose){
+				newPoint = false;
+				break;
+			}
+			// Store the minimum distance to make sure this point isn't too far
+			// from all of the other points
+			else if (minDist > dist){
+				minDist = dist;
+			}
+			
+		}
+		// If this is a new point then make sure it isn't too far from all other points
+		if (newPoint && minDist > tooFar){
+			newPoint = false;
+		}
+	} while (!newPoint);  // While we haven't found a new point
 	
 	//2. Check to see if the state is valid
 	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
