@@ -72,6 +72,9 @@ void Graphics::HandleEventOnTimer(void)
 		case 1: //TODO: This is where extend RRT should go
 			m_planner->ExtendRRT();
 			break;
+		case 2: 
+			//TODO: This will be the RG-RRT
+			break;
 		}
 	}
 	if(!m_planner->IsProblemSolved())
