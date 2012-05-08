@@ -74,6 +74,7 @@ void Graphics::HandleEventOnTimer(void)
 			break;
 		case 2: 
 			//TODO: This will be the RG-RRT
+			m_planner->ExtendRG_RRT();
 			break;
 		}
 	}

@@ -19,6 +19,7 @@ struct Vertex
 	    TYPE_INIT = 1,
 	    TYPE_GOAL = 2
 	};
+
 		//Only used for part 2
 	std::vector<ReachableObj *>mReachableObj;
     int    m_parent;
@@ -43,6 +44,11 @@ struct Vertex
 class MotionPlanner
 {
 public:
+	enum
+{
+	RRT=0,
+	REACH_RRT=1
+};
     MotionPlanner(Simulator * const simulator);
             
     ~MotionPlanner(void);
@@ -123,9 +129,9 @@ protected:
 
     void AddVertex(Vertex * const v);
 
-    bool ExtendTree(const int    vid,double u, double v, double pSubGoal[]);
+    void ExtendTree(const int vid,double u, double v, double pSubGoal[], int pMode=RRT);
 
-	void generateReachableState(int pParentIdx, double u, double v, Vertex *pParentVertex);
+	void generateReachableState(int pParentIdx,Vertex *pParentVertex);
     
     Simulator            *m_simulator;
     std::vector<Vertex *> m_vertices;

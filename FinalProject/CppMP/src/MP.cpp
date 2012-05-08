@@ -14,6 +14,8 @@ MotionPlanner::MotionPlanner(Simulator * const simulator)
 	failCount = 0;
     m_simulator = simulator;   
 
+	double oldX = m_simulator->GetRobotCenterX();
+	double oldY = m_simulator->GetRobotCenterY();
     Vertex *vinit = new Vertex();
 
     vinit->m_parent   = -1;   
@@ -25,19 +27,13 @@ MotionPlanner::MotionPlanner(Simulator * const simulator)
 		vinit->m_state[i] =0;
 	}
 	m_simulator->SetRobotTheta(0);
-
-	for(double u = Simulator::MIN_ACCELERATION; u<Simulator::MAX_ACCELERATION;u++)
-	{
-		for(double v = Simulator::MAX_ANGLE_ACCELERATION;v<Simulator::MAX_ANGLE_ACCELERATION;v++)
-		{
-			generateReachableState(0,u,v,vinit);
-		}
-
-	}
+	generateReachableState(0,vinit);
 
     AddVertex(vinit);
     m_vidAtGoal = -1;
     m_totalSolveTime = 0;
+
+	m_simulator->SetRobotCenter(oldX, oldY);
 }
 
 MotionPlanner::~MotionPlanner(void)
@@ -50,7 +46,7 @@ MotionPlanner::~MotionPlanner(void)
 }
 
 
-bool MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal[])
+void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal[],int pMode)
 {
 
 	double currentLocX = m_simulator->GetRobotCenterX();
@@ -104,20 +100,26 @@ bool MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 			{
 				vertex->m_state[i] = stepVertex[i];
 			}
+
 			vertex->m_parent = parent;
 			AddVertex(vertex);
 			parent = m_vertices.size()-1;
+
+			if(pMode == REACH_RRT)
+			{
+				generateReachableState(parent,vertex);
+				
+			}
 			currentLocX = stepVertex[Simulator::STATE_X];
 			currentLocY = stepVertex[Simulator::STATE_Y];
 		}
-		else {
+		else 
+		{
 			inObstacle = true;
 			// Reset the robot to be at the previous vertex
 			m_simulator->SetRobotCenter(currentLocX, currentLocY);
 		}
 	}
-	//Did we hit an obstacle? If not then we added it sucessfully. 
-	return !inObstacle;
 }
 
 void MotionPlanner::ExtendRRT(void)
@@ -280,40 +282,103 @@ void MotionPlanner::ExtendRG_RRT(void)
 	//2. Check to see if the state is valid
 	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
 
+	if(m_simulator->IsValidState())
+	{
+		//3. Find the nearest configuration based on distance.
+		int vid = getClosestVid(sampleState);
+
+		//Now see if vid's children is closer
+		
+		int childrenIdx = -1;
+		double minDistance = calculateDistance(sampleState,m_vertices[vid]->m_state);
+		std::vector<ReachableObj *>children = m_vertices.at(vid)->mReachableObj;
+
+		for(int i=0; i<children.size();i++)
+		{
+			double tempDistance =calculateDistance(sampleState, children[i]->m_state); 
+			if(tempDistance< minDistance)
+			{
+				minDistance = tempDistance;
+				childrenIdx = i;
+
+			}
+
+		}
+		
+		if(childrenIdx != -1)
+		{
+
+			double u = children[childrenIdx]->u;
+			double v = children[childrenIdx]->v;
+			ExtendTree(vid,u,v,sampleState,REACH_RRT);
+		}
+	}
 	
 	m_totalSolveTime += ElapsedTime(&clk);
 }
-void MotionPlanner::generateReachableState(int pParentIdx,double u, double v, Vertex *pParentVertex)
+void MotionPlanner::generateReachableState(int pParentIdx, Vertex *pParentVertex)
 {
-	double * tempObj = pParentVertex->m_state;
-
+	double tempObj[Simulator::STATE_NR_DIMS];
+	double oldValues[Simulator::STATE_NR_DIMS];
 	double deltat = .1;
-	double deltaX = deltat* tempObj[Simulator::STATE_TRANS_VELOCITY]*cos(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
-	double deltaY = deltat*tempObj[Simulator::STATE_TRANS_VELOCITY]*sin(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
-	double deltatheta = deltat*(tempObj[Simulator::STATE_TRANS_VELOCITY]/m_simulator->GetRobotRadius()) * tan(tempObj[Simulator::STATE_STEERING_VELOCITY]);
-	double deltaSpeed = deltat * u;
-	double deltaAngleVel = deltat*v;
 
-	ReachableObj *anObj = new ReachableObj();
-	anObj->m_state[Simulator::STATE_X] = tempObj[Simulator::STATE_X] + deltaX;
-	anObj->m_state[Simulator::STATE_Y] = tempObj[Simulator::STATE_Y] + deltaY;
-
-	m_simulator->SetRobotCenter(anObj->m_state[Simulator::STATE_X], anObj->m_state[Simulator::STATE_Y]);
-
-	if(m_simulator->IsValidState())
+	bool addIt = false;
+	for(int k=0;k<5;k++)
 	{
-		anObj->m_state[Simulator::STATE_TRANS_VELOCITY] = tempObj[Simulator::STATE_TRANS_VELOCITY] + deltaSpeed;
-		anObj->m_state[Simulator::STATE_ORIENTATION_IN_RADS] = tempObj[Simulator::STATE_ORIENTATION_IN_RADS] + deltatheta;
-		anObj->m_state[Simulator::STATE_STEERING_VELOCITY] = tempObj[Simulator::STATE_STEERING_VELOCITY] + deltaAngleVel;
-		anObj->u = u;
-		anObj->v = v;
-		anObj->m_parent = pParentIdx;
+
+		for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
+		{
+			tempObj[i] = pParentVertex->m_state[i];
+		}
+		double u = PseudoRandomUniformReal(Simulator::MIN_ACCELERATION, Simulator::MAX_ANGLE_ACCELERATION);
+		double v = PseudoRandomUniformReal(Simulator::MIN_ANGLE_ACCELERATION, Simulator::MAX_ANGLE_ACCELERATION);
+	
+		for(int iter=0;iter<1000;iter++)
+		{
+			double deltaX = deltat* tempObj[Simulator::STATE_TRANS_VELOCITY]*cos(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
+			double deltaY = deltat*tempObj[Simulator::STATE_TRANS_VELOCITY]*sin(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
+			double deltatheta = deltat*(tempObj[Simulator::STATE_TRANS_VELOCITY]/m_simulator->GetRobotRadius()) * tan(tempObj[Simulator::STATE_STEERING_VELOCITY]);
+			double deltaSpeed = deltat * u;
+			double deltaAngleVel = deltat*v;
+
+			for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
+			{
+				oldValues[i] = tempObj[i];
+			}
+
+			tempObj[Simulator::STATE_X]+=deltaX;
+			tempObj[Simulator::STATE_Y]+=deltaY;
+			tempObj[Simulator::STATE_ORIENTATION_IN_RADS]=clampAngle(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]+deltatheta);
+			tempObj[Simulator::STATE_TRANS_VELOCITY] = clampValue(tempObj[Simulator::STATE_TRANS_VELOCITY]+deltaSpeed,Simulator::MIN_VELOCITY, Simulator::MAX_VELOCITY);
+			tempObj[Simulator::STATE_STEERING_VELOCITY] = clampValue(tempObj[Simulator::STATE_STEERING_VELOCITY]+deltaAngleVel,Simulator::MIN_ANGLE_VELOCITY, Simulator::MAX_ANGLE_ACCELERATION);
 		
-		pParentVertex->mReachableObj.push_back(anObj);
-	}
-	else
-	{
-		delete anObj;
-		anObj = NULL;
+			m_simulator->SetRobotState(tempObj);
+			if(m_simulator->IsValidState())
+			{
+				addIt = true;
+			}
+			else
+			{
+				for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
+				{
+					tempObj[i] = oldValues[i];
+				}
+
+				break;
+			}
+		}
+	
+		if(addIt)
+		{
+			ReachableObj *anObj = new ReachableObj();
+			for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
+			{
+				anObj->m_state[i] = tempObj[i];
+			}
+			anObj->u = u;
+			anObj->v = v;
+			anObj->m_parent = pParentIdx;
+			pParentVertex->mReachableObj.push_back(anObj);
+		}
 	}
 }
