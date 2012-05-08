@@ -108,11 +108,16 @@ void Graphics::HandleEventOnTimer(void)
 		if (m_pathPos > 0)
 		{
 			double * prevState = (m_planner->m_vertices[m_path[(m_pathPos - 1)]]->m_state);
-			double angle = atan2(state[Simulator::STATE_Y] - prevState[Simulator::STATE_Y], state[Simulator::STATE_X] - prevState[Simulator::STATE_X]);
-			angle *= 180 / M_PI;
-			std::cout << ":PrevY " << prevState[Simulator::STATE_Y] << ":PrevX " << prevState[Simulator::STATE_X] << std::endl;
-			std::cout << ":Angle " << angle << std::endl;
-			m_simulator.SetRobotTheta(abs(angle));
+			double dY = state[Simulator::STATE_Y] - prevState[Simulator::STATE_Y];
+			double dX = state[Simulator::STATE_X] - prevState[Simulator::STATE_X];
+			double angleFix = 90;
+			if((dX < 0 && dY > 0) || (dX < 0 && dY < 0))
+			{
+				angleFix = 270;
+			}
+			
+			double angle = angleFix - atan(dY/dX) * 180 / M_PI;
+			m_simulator.SetRobotTheta(angle);
 		}
 #ifdef _WIN32
 	Sleep(100);
