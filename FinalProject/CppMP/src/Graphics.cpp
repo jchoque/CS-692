@@ -97,9 +97,10 @@ void Graphics::HandleEventOnTimer(void)
 	if(m_pathPos >= m_path.size())
 	    m_pathPos = 0;
 	
-	m_simulator.SetRobotState(m_planner->m_vertices[m_path[m_pathPos]]->m_state);
+	
 		double * state = (m_planner->m_vertices[m_path[m_pathPos]]->m_state);
-	printf("\n-CurrentState[x=%4.3f, y=%4.3f,oreintation=%4.3f vel=%4.3f, angleVel=%4.3f]",
+		m_simulator.SetRobotState(m_planner->m_vertices[m_path[m_pathPos]]->m_state);
+		printf("\n-CurrentState[x=%4.3f, y=%4.3f,oreintation=%4.3f vel=%4.3f, angleVel=%4.3f]",
 		state[Simulator::STATE_X], 
 		state[Simulator::STATE_Y],
 		state[Simulator::STATE_ORIENTATION_IN_RADS],
@@ -220,7 +221,8 @@ void Graphics::HandleEventOnDisplay(void)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glColor3f(1, 0, 0);
     DrawCircle2D(m_simulator.GetRobotCenterX(), m_simulator.GetRobotCenterY(), m_simulator.GetRobotRadius());
-    glColor3f(0, 1, 0);
+    DrawPointer();
+	glColor3f(0, 1, 0);
     DrawCircle2D(m_simulator.GetGoalCenterX(), m_simulator.GetGoalCenterY(), m_simulator.GetGoalRadius());
     glColor3f(0, 0, 1);
     for(int i = 0; i < m_simulator.GetNrObstacles(); ++i)
@@ -249,7 +251,7 @@ void Graphics::HandleEventOnDisplay(void)
 		}
 		glEnd();
 
-		DrawPointer();
+		
     }
 
 
@@ -261,12 +263,12 @@ void Graphics::DrawPointer()
 	double endPoint[2];
 	startPoint[0] = m_simulator.GetRobotCenterX();
 	startPoint[1] = m_simulator.GetRobotCenterY();
-	double theta = m_simulator.GetRobotTheta() * 3.14/180;
+	double theta = m_simulator.GetRobotTheta();// * 3.14/180;
 	
-	endPoint[0] = startPoint[0] + (m_simulator.GetRobotRadius() + 1) * sin(theta);
-	endPoint[1] = startPoint[1] + (m_simulator.GetRobotRadius() + 1) * cos(theta);
+	endPoint[0] = startPoint[0] + (m_simulator.GetRobotRadius() + 1) * cos(theta);
+	endPoint[1] = startPoint[1] + (m_simulator.GetRobotRadius() + 1) * sin(theta);
 		
-	glColor3f(0,1,0);
+	glColor3f(1,1,0);
 	glLineWidth(3);
 
 	glBegin(GL_LINES);

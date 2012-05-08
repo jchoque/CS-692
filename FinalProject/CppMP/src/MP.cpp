@@ -20,7 +20,20 @@ MotionPlanner::MotionPlanner(Simulator * const simulator)
     vinit->m_nchildren= 0;    
     vinit->m_state[0] = m_simulator->GetRobotCenterX();
     vinit->m_state[1] = m_simulator->GetRobotCenterY();
+	for(int i=2;i<Simulator::STATE_NR_DIMS;i++)
+	{
+		vinit->m_state[i] =0;
+	}
 	m_simulator->SetRobotTheta(0);
+
+	for(double u = Simulator::MIN_ACCELERATION; u<Simulator::MAX_ACCELERATION;u++)
+	{
+		for(double v = Simulator::MAX_ANGLE_ACCELERATION;v<Simulator::MAX_ANGLE_ACCELERATION;v++)
+		{
+			generateReachableState(0,u,v,vinit);
+		}
+
+	}
 
     AddVertex(vinit);
     m_vidAtGoal = -1;
@@ -220,32 +233,52 @@ void MotionPlanner::GetPathFromInitToGoal(std::vector<int> *path) const
 	path->push_back(rpath[i]);
 }
 
-
-int MotionPlanner::pickWeightedRandomIdx()
+void MotionPlanner::ExtendRG_RRT(void)
 {
-	// Find the maximum children a vertex could have
-	double totalWeight = 0;
+    Clock clk;
+    StartTime(&clk);
+
+	//1. Sample state
+	double * sampleState = new double[Simulator::STATE_NR_DIMS];
+	m_simulator->SampleState(sampleState);
+
+	//2. Check to see if the state is valid
+	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
+
 	
-	for (unsigned int i = 0; i < m_vertices.size(); i++){
-		//relative weight
-		totalWeight += calculateWeight(i);
+	m_totalSolveTime += ElapsedTime(&clk);
+}
+void MotionPlanner::generateReachableState(int pParentIdx,double u, double v, Vertex *pParentVertex)
+{
+	double * tempObj = pParentVertex->m_state;
+
+	double deltat = .1;
+	double deltaX = deltat* tempObj[Simulator::STATE_TRANS_VELOCITY]*cos(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
+	double deltaY = deltat*tempObj[Simulator::STATE_TRANS_VELOCITY]*sin(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
+	double deltatheta = deltat*(tempObj[Simulator::STATE_TRANS_VELOCITY]/m_simulator->GetRobotRadius()) * tan(tempObj[Simulator::STATE_STEERING_VELOCITY]);
+	double deltaSpeed = deltat * u;
+	double deltaAngleVel = deltat*v;
+
+	ReachableObj *anObj = new ReachableObj();
+	anObj->m_state[Simulator::STATE_X] = tempObj[Simulator::STATE_X] + deltaX;
+	anObj->m_state[Simulator::STATE_Y] = tempObj[Simulator::STATE_Y] + deltaY;
+
+	m_simulator->SetRobotCenter(anObj->m_state[Simulator::STATE_X], anObj->m_state[Simulator::STATE_Y]);
+
+	if(m_simulator->IsValidState())
+	{
+		anObj->m_state[Simulator::STATE_TRANS_VELOCITY] = tempObj[Simulator::STATE_TRANS_VELOCITY] + deltaSpeed;
+		anObj->m_state[Simulator::STATE_ORIENTATION_IN_RADS] = tempObj[Simulator::STATE_ORIENTATION_IN_RADS] + deltatheta;
+		anObj->m_state[Simulator::STATE_STEERING_VELOCITY] = tempObj[Simulator::STATE_STEERING_VELOCITY] + deltaAngleVel;
+		anObj->u = u;
+		anObj->v = v;
+		anObj->m_parent = pParentIdx;
+		
+		pParentVertex->mReachableObj.push_back(anObj);
 	}
-
-	// Generate a random number based on the totalWeight and then
-	// pick the vertex that matches that weight
-	double weightPicked = PseudoRandomUniformReal(0,totalWeight); 
-
-	int vid = 0;  // The vector index selected
-	
-	//Reinit the total weight
-	totalWeight = 0;
-	for (unsigned int i = 0; i < m_vertices.size(); i++){ 
-		totalWeight += calculateWeight(i);  // Add it to the previous vector weights
-		if (totalWeight >= weightPicked){
-			vid = i;
-			break;
-		}
+	else
+	{
+		delete anObj;
+		anObj = NULL;
 	}
-
-	return vid;
 }

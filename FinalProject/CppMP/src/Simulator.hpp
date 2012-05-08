@@ -112,7 +112,8 @@ public:
 
     void SetRobotState(const double s[])
     {
-		SetRobotCenter(s[0], s[1]);
+		SetRobotCenter(s[Simulator::STATE_X], s[Simulator::STATE_Y]);
+		SetRobotTheta(s[Simulator::STATE_ORIENTATION_IN_RADS]);
 	}
     
 	void SetRobotTheta(double theta)

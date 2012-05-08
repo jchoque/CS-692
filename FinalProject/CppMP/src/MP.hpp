@@ -4,6 +4,13 @@
 #include "Simulator.hpp"
 
 
+struct ReachableObj
+{
+	int m_parent;
+	double u,v;
+	double m_state[Simulator::STATE_NR_DIMS];
+};
+
 struct Vertex
 {
     enum
@@ -12,7 +19,8 @@ struct Vertex
 	    TYPE_INIT = 1,
 	    TYPE_GOAL = 2
 	};
-	
+		//Only used for part 2
+	std::vector<ReachableObj *>mReachableObj;
     int    m_parent;
     double m_state[Simulator::STATE_NR_DIMS];
     int    m_type;
@@ -26,7 +34,8 @@ struct Vertex
 
 		return xy;
 	}
-    
+
+
 };
 
     
@@ -39,6 +48,8 @@ public:
     ~MotionPlanner(void);
 
     void ExtendRRT(void);
+
+	void ExtendRG_RRT(void);
         
 protected:
 
@@ -72,10 +83,10 @@ protected:
 	}
 	double clampAngle(double pAngle)
 	{
-		if(pAngle >=360)
-			return pAngle-360;
+		if(pAngle >=(2*M_PI))
+			return pAngle-(2*M_PI);
 		if(pAngle <=0)
-			return pAngle+360;
+			return pAngle+(2*M_PI);
 		return pAngle;
 	}
 
@@ -103,8 +114,6 @@ protected:
 	bool shouldPickRand;
 	int failCount;
 
-	int pickWeightedRandomIdx();
-	
     bool IsProblemSolved(void)
     {
 	return m_vidAtGoal >= 0;
@@ -115,6 +124,8 @@ protected:
     void AddVertex(Vertex * const v);
 
     bool ExtendTree(const int    vid,double u, double v, double pSubGoal[]);
+
+	void generateReachableState(int pParentIdx, double u, double v, Vertex *pParentVertex);
     
     Simulator            *m_simulator;
     std::vector<Vertex *> m_vertices;
