@@ -107,21 +107,7 @@ void Graphics::HandleEventOnTimer(void)
 				state[Simulator::STATE_ORIENTATION_IN_RADS],
 				state[Simulator::STATE_TRANS_VELOCITY], 
 				state[Simulator::STATE_STEERING_VELOCITY]);
-		// Rotate the point to the correct position
-		if (m_pathPos > 0)
-		{
-			double * prevState = (m_planner->m_vertices[m_path[(m_pathPos - 1)]]->m_state);
-			double dY = state[Simulator::STATE_Y] - prevState[Simulator::STATE_Y];
-			double dX = state[Simulator::STATE_X] - prevState[Simulator::STATE_X];
-			double angleFix = 90;
-			if((dX < 0 && dY > 0) || (dX < 0 && dY < 0))
-			{
-				angleFix = 270;
-			}
-			
-			double angle = angleFix - atan(dY/dX) * 180 / M_PI;
-			m_simulator.SetRobotTheta(angle);
-		}
+		m_simulator.SetRobotState(state);
 #ifdef _WIN32
 	Sleep(100);
 #endif
@@ -235,7 +221,6 @@ void Graphics::HandleEventOnDisplay(void)
     
 	//draw robot, goal, and obstacles
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    
     DrawPointer();
 	glColor3f(0, 1, 0);
     DrawCircle2D(m_simulator.GetGoalCenterX(), m_simulator.GetGoalCenterY(), m_simulator.GetGoalRadius());
@@ -390,6 +375,26 @@ void Graphics::MousePosition(const int x, const int y, double *posX, double *pos
     glReadPixels( x, int(winY), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ );
     
     gluUnProject(winX, winY, winZ, modelview, projection, viewport, posX, posY, &posZ);
+}
+
+void Graphics::DrawPointer()
+{
+	double startPoint[2];
+	double endPoint[2];
+	startPoint[0] = m_simulator.GetRobotCenterX();
+	startPoint[1] = m_simulator.GetRobotCenterY();
+	double theta = m_simulator.GetRobotTheta() * 3.14/180;
+
+	endPoint[0] = startPoint[0] + (m_simulator.GetRobotRadius() + 1) * sin(theta);
+	endPoint[1] = startPoint[1] + (m_simulator.GetRobotRadius() + 1) * cos(theta);
+
+	glColor3f(0,1,0);
+	glLineWidth(3);
+
+	glBegin(GL_LINES);
+	glVertex2dv(startPoint);
+	glVertex2dv(endPoint);
+	glEnd();
 }
 
 int main(int argc, char **argv)

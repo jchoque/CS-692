@@ -27,9 +27,8 @@ protected:
     void HandleEventOnMouseMotion(const double mousePosX, const double mousePosY);
     void HandleEventOnKeyPress(const int key);
 
-	void DrawPointer();
     void DrawCircle2D(const double cx, const double cy, const double r);
-
+	void DrawPointer();
     static void CallbackEventOnDisplay(void);
     static void CallbackEventOnMouse(int button, int state, int x, int y);
     static void CallbackEventOnMouseMotion(int x, int y);
