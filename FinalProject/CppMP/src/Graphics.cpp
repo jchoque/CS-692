@@ -94,18 +94,34 @@ void Graphics::HandleEventOnTimer(void)
     
     if(m_path.size() != 0)
     {
-	if(m_pathPos >= m_path.size())
-	    m_pathPos = 0;
-	
+		if(m_pathPos >= m_path.size())
+		{
+		    m_pathPos = 0;
+		}
+
 	
 		double * state = (m_planner->m_vertices[m_path[m_pathPos]]->m_state);
-		m_simulator.SetRobotState(m_planner->m_vertices[m_path[m_pathPos]]->m_state);
-		printf("\n-CurrentState[x=%4.3f, y=%4.3f,oreintation=%4.3f vel=%4.3f, angleVel=%4.3f]",
-		state[Simulator::STATE_X], 
-		state[Simulator::STATE_Y],
-		state[Simulator::STATE_ORIENTATION_IN_RADS],
-		state[Simulator::STATE_TRANS_VELOCITY], 
-		state[Simulator::STATE_STEERING_VELOCITY]);
+		printf("\n-CurrentState[x=%4.3f, y=%4.3f,oreintation=%4.3f vel=%4.3f, angleVel=%4.3f]\n",
+				state[Simulator::STATE_X], 
+				state[Simulator::STATE_Y],
+				state[Simulator::STATE_ORIENTATION_IN_RADS],
+				state[Simulator::STATE_TRANS_VELOCITY], 
+				state[Simulator::STATE_STEERING_VELOCITY]);
+		// Rotate the point to the correct position
+		if (m_pathPos > 0)
+		{
+			double * prevState = (m_planner->m_vertices[m_path[(m_pathPos - 1)]]->m_state);
+			double dY = state[Simulator::STATE_Y] - prevState[Simulator::STATE_Y];
+			double dX = state[Simulator::STATE_X] - prevState[Simulator::STATE_X];
+			double angleFix = 90;
+			if((dX < 0 && dY > 0) || (dX < 0 && dY < 0))
+			{
+				angleFix = 270;
+			}
+			
+			double angle = angleFix - atan(dY/dX) * 180 / M_PI;
+			m_simulator.SetRobotTheta(angle);
+		}
 #ifdef _WIN32
 	Sleep(100);
 #endif
@@ -219,8 +235,7 @@ void Graphics::HandleEventOnDisplay(void)
     
 	//draw robot, goal, and obstacles
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glColor3f(1, 0, 0);
-    DrawCircle2D(m_simulator.GetRobotCenterX(), m_simulator.GetRobotCenterY(), m_simulator.GetRobotRadius());
+    
     DrawPointer();
 	glColor3f(0, 1, 0);
     DrawCircle2D(m_simulator.GetGoalCenterX(), m_simulator.GetGoalCenterY(), m_simulator.GetGoalRadius());
@@ -250,15 +265,14 @@ void Graphics::HandleEventOnDisplay(void)
 			glVertex2dv(m_planner->m_vertices[m_planner->m_vertices[i]->m_parent]->m_state);
 		}
 		glEnd();
-
 		
     }
 
+	glColor3f(1, 0, 0);
+	DrawCircle2D(m_simulator.GetRobotCenterX(), m_simulator.GetRobotCenterY(), m_simulator.GetRobotRadius());
 
-}
-
-void Graphics::DrawPointer()
-{
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_ALWAYS);
 	double startPoint[2];
 	double endPoint[2];
 	startPoint[0] = m_simulator.GetRobotCenterX();
@@ -268,14 +282,16 @@ void Graphics::DrawPointer()
 	endPoint[0] = startPoint[0] + (m_simulator.GetRobotRadius() + 1) * cos(theta);
 	endPoint[1] = startPoint[1] + (m_simulator.GetRobotRadius() + 1) * sin(theta);
 		
-	glColor3f(1,1,0);
+	glColor3f(1,0,0);
 	glLineWidth(3);
 
 	glBegin(GL_LINES);
 	glVertex2dv(startPoint);
 	glVertex2dv(endPoint);
 	glEnd();
+	glLineWidth(1);
 }
+
 
 void Graphics::DrawCircle2D(const double cx, const double cy, const double r)
 {
