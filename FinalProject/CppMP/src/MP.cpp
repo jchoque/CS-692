@@ -134,6 +134,8 @@ void MotionPlanner::ExtendRRT(void)
 	//     probability of having to maneuver around multiple obstacles increases
 	//     and causes the computational time to increase
 	double * sampleState = new double[Simulator::STATE_NR_DIMS];
+	m_simulator->SampleState(sampleState);
+	/*
 	bool newPoint;
 	do {
 		newPoint = true;
@@ -161,7 +163,7 @@ void MotionPlanner::ExtendRRT(void)
 			newPoint = false;
 		}
 	} while (!newPoint);  // While we haven't found a new point
-	
+	*/
 	//2. Check to see if the state is valid
 	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
 
