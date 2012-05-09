@@ -109,6 +109,23 @@ void Graphics::HandleEventOnTimer(void)
 				state[Simulator::STATE_TRANS_VELOCITY], 
 				state[Simulator::STATE_STEERING_VELOCITY]);
 		m_simulator.SetRobotState(state);
+
+		// Rotate the point to the correct position
+		if (m_pathPos > 0)
+		{
+			double * prevState = (m_planner->m_vertices[m_path[(m_pathPos - 1)]]->m_state);
+			double dY = state[Simulator::STATE_Y] - prevState[Simulator::STATE_Y];
+			double dX = state[Simulator::STATE_X] - prevState[Simulator::STATE_X];
+			double angleFix = 0;
+			if((dX < 0 && dY > 0) || (dX < 0 && dY < 0))
+			{
+				angleFix = M_PI;
+			}
+			
+			double angle = angleFix + atan(dY/dX);
+			m_simulator.SetRobotTheta(angle);
+		
+		}
 #ifdef _WIN32
 	Sleep(100);
 #endif
@@ -222,7 +239,7 @@ void Graphics::HandleEventOnDisplay(void)
     
 	//draw robot, goal, and obstacles
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    DrawPointer();
+    
 	glColor3f(0, 1, 0);
     DrawCircle2D(m_simulator.GetGoalCenterX(), m_simulator.GetGoalCenterY(), m_simulator.GetGoalRadius());
     glColor3f(0, 0, 1);
@@ -257,6 +274,7 @@ void Graphics::HandleEventOnDisplay(void)
 	glColor3f(1, 0, 0);
 	DrawCircle2D(m_simulator.GetRobotCenterX(), m_simulator.GetRobotCenterY(), m_simulator.GetRobotRadius());
 
+	// Draw the directional pointer
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_ALWAYS);
 	double startPoint[2];
@@ -378,25 +396,6 @@ void Graphics::MousePosition(const int x, const int y, double *posX, double *pos
     gluUnProject(winX, winY, winZ, modelview, projection, viewport, posX, posY, &posZ);
 }
 
-void Graphics::DrawPointer()
-{
-	double startPoint[2];
-	double endPoint[2];
-	startPoint[0] = m_simulator.GetRobotCenterX();
-	startPoint[1] = m_simulator.GetRobotCenterY();
-	double theta = m_simulator.GetRobotTheta() * 3.14/180;
-
-	endPoint[0] = startPoint[0] + (m_simulator.GetRobotRadius() + 1) * sin(theta);
-	endPoint[1] = startPoint[1] + (m_simulator.GetRobotRadius() + 1) * cos(theta);
-
-	glColor3f(0,1,0);
-	glLineWidth(3);
-
-	glBegin(GL_LINES);
-	glVertex2dv(startPoint);
-	glVertex2dv(endPoint);
-	glEnd();
-}
 
 int main(int argc, char **argv)
 {
