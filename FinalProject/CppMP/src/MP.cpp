@@ -3,7 +3,11 @@
 #include "MyTimer.hpp"
 #include <cstring>
 #include <iostream>
+#include <sstream>
+#include <string>
 #include <math.h>
+#include <stdio.h>
+#include <unordered_map>
 
 using namespace std;
 
@@ -13,7 +17,7 @@ MotionPlanner::MotionPlanner(Simulator * const simulator)
 	shouldPickRand = false;
 	failCount = 0;
     m_simulator = simulator;   
-
+	
 	double oldX = m_simulator->GetRobotCenterX();
 	double oldY = m_simulator->GetRobotCenterY();
     Vertex *vinit = new Vertex();
@@ -58,7 +62,7 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 	//double stepSize = m_simulator->GetDistOneStep();
 	double stepSize = 0.1;
 	bool inObstacle = false;
-
+	Vertex *vertex;
 	double distance = 10000;
 	double stepVertex[Simulator::STATE_NR_DIMS];
 	stepVertex[Simulator::STATE_X] = m_vertices[vid]->m_state[Simulator::STATE_X];
@@ -95,7 +99,7 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 				m_vidAtGoal = vid;
 				break;
 			}
-			Vertex *vertex = new Vertex();
+			vertex = new Vertex();
 			for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
 			{
 				vertex->m_state[i] = stepVertex[i];
@@ -112,6 +116,20 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 			}
 			currentLocX = stepVertex[Simulator::STATE_X];
 			currentLocY = stepVertex[Simulator::STATE_Y];
+			
+			// Store this point in memory so we don't pick another point close 
+			// to it to build off of
+			int pointX = (int)vertex->m_state[Simulator::STATE_X];
+			int pointY = (int)vertex->m_state[Simulator::STATE_Y];
+			map <int,int> points;
+			unordered_map<int, map<int,int>>::const_iterator iter = m_endPoints.find(pointX);
+			if (iter != m_endPoints.end()){
+				points = iter->second;
+			}
+			std::pair<int, int> point (pointY, 0);
+			points.insert(point);
+			std::pair<int, map<int, int>> data (pointX, points);
+			m_endPoints.insert(data);		
 		}
 		else 
 		{
@@ -120,52 +138,39 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 			m_simulator->SetRobotCenter(currentLocX, currentLocY);
 		}
 	}
+	
 }
 
 void MotionPlanner::ExtendRRT(void)
 {
     Clock clk;
     StartTime(&clk);
-	double tooClose =  m_simulator->GetRobotRadius() * 2;
-	double tooFar =  tooClose * 10;
 	//1. Sample state
-	// Since sampling takes very little time we want to only sample vertices that are:
-	// a)  Unique points that are not very close to existing vertices because they
-	//     most likely won't provide any new paths
-	// b)  Points that are not very far from all other vertices because the 
-	//     probability of having to maneuver around multiple obstacles increases
-	//     and causes the computational time to increase
+	// Since sampling takes very little time we want to only sample vertices that are
+	// unique points that are not very close to existing vertices because they
+	// most likely won't provide any new paths
 	double * sampleState = new double[Simulator::STATE_NR_DIMS];
-	m_simulator->SampleState(sampleState);
-	/*
-	bool newPoint;
+	bool validState;
+//	cout << "Generating a new point" << endl;
 	do {
-		newPoint = true;
+		validState = true;
 		m_simulator->SampleState(sampleState);
-
-		// Check all known vertices to see if this point is relatively close to an existing vertex
-		// or if the vertex is way too far away don't even try to add it
-		double minDist = DBL_MAX;
-		for (int idx = 0; idx < m_vertices.size() && newPoint; idx++){
-			double dist = sqrt(pow(sampleState[Simulator::STATE_X] - m_vertices[idx]->m_state[Simulator::STATE_X], 2) + 
-				pow(sampleState[Simulator::STATE_Y] - m_vertices[idx]->m_state[Simulator::STATE_Y], 2));
-			if (dist < tooClose){
-				newPoint = false;
+	
+		int pointX = (int)sampleState[Simulator::STATE_X];
+		int pointY = (int)sampleState[Simulator::STATE_Y];
+	
+		unordered_map<int, map<int,int>>::const_iterator iter = m_endPoints.find(pointX);//pointX.str());
+		if (iter != m_endPoints.end()){
+			if (iter->second.find(pointY) != iter->second.end()){
+				cout << "Skipping point " << pointX << "," << pointY << endl;
+				validState = false;
 				break;
 			}
-			// Store the minimum distance to make sure this point isn't too far
-			// from all of the other points
-			else if (minDist > dist){
-				minDist = dist;
-			}
-			
 		}
-		// If this is a new point then make sure it isn't too far from all other points
-		if (newPoint && minDist > tooFar){
-			newPoint = false;
-		}
-	} while (!newPoint);  // While we haven't found a new point
-	*/
+		
+	} while (!validState);
+//	cout << "Found a valid point!" << endl;
+
 	//2. Check to see if the state is valid
 	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
 

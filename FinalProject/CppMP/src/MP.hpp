@@ -2,7 +2,12 @@
 #define MOTION_PLANNER_HPP_
 
 #include "Simulator.hpp"
+#include <string>
+#include <math.h>
+#include <map>
+#include <unordered_map>
 
+using namespace std;
 
 struct ReachableObj
 {
@@ -135,6 +140,7 @@ protected:
     
     Simulator            *m_simulator;
     std::vector<Vertex *> m_vertices;
+	unordered_map<int, map<int, int>>              m_endPoints;
     int                   m_vidAtGoal;
     double                m_totalSolveTime;
 
