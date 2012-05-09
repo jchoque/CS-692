@@ -282,18 +282,22 @@ void MotionPlanner::ExtendRG_RRT(void)
 
 	//1. Sample state
 	double * sampleState = new double[Simulator::STATE_NR_DIMS];
-	m_simulator->SampleState(sampleState);
+	bool validState = false;
+	while (!validState){
+		m_simulator->SampleState(sampleState);
+	
+		//2. Check to see if the state is valid
+		m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
+		validState = m_simulator->IsValidState();
+	}
 
-	//2. Check to see if the state is valid
-	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
-
-	if(m_simulator->IsValidState())
+	if(validState)
 	{
 		//3. Find the nearest configuration based on distance.
 		int vid = getClosestVid(sampleState);
 
 		//Now see if vid's children is closer
-		
+		  
 		int childrenIdx = -1;
 		double minDistance = calculateDistance(sampleState,m_vertices[vid]->m_state);
 		std::vector<ReachableObj *>children = m_vertices.at(vid)->mReachableObj;
@@ -312,7 +316,7 @@ void MotionPlanner::ExtendRG_RRT(void)
 		
 		if(childrenIdx != -1)
 		{
-
+			cout << "Child idx " << childrenIdx << endl;
 			double u = children[childrenIdx]->u;
 			double v = children[childrenIdx]->v;
 			ExtendTree(vid,u,v,sampleState,REACH_RRT);
