@@ -102,12 +102,14 @@ void Graphics::HandleEventOnTimer(void)
 
 	
 		double * state = (m_planner->m_vertices[m_path[m_pathPos]]->m_state);
-		printf("\n-CurrentState[x=%4.3f, y=%4.3f,oreintation=%4.3f vel=%4.3f, angleVel=%4.3f]\n",
+		if (false){
+			printf("\n-CurrentState[x=%4.3f, y=%4.3f,oreintation=%4.3f vel=%4.3f, angleVel=%4.3f]\n",
 				state[Simulator::STATE_X], 
 				state[Simulator::STATE_Y],
 				state[Simulator::STATE_ORIENTATION_IN_RADS],
 				state[Simulator::STATE_TRANS_VELOCITY], 
 				state[Simulator::STATE_STEERING_VELOCITY]);
+		}
 		m_simulator.SetRobotState(state);
 
 		// Rotate the point to the correct position
@@ -127,7 +129,7 @@ void Graphics::HandleEventOnTimer(void)
 		
 		}
 #ifdef _WIN32
-	Sleep(100);
+	//Sleep(100);
 #endif
 	++m_pathPos;
     }
@@ -298,13 +300,15 @@ void Graphics::HandleEventOnDisplay(void)
 		glColor3f(1.0,0.6,0.0);
 		DrawCircle2D(m_simulator.getLastSampleX(), m_simulator.getLastSampleY(),.5);
 	}
+
+	// Draw the directional pointer
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_ALWAYS);
 	double startPoint[2];
 	double endPoint[2];
 	startPoint[0] = m_simulator.GetRobotCenterX();
 	startPoint[1] = m_simulator.GetRobotCenterY();
-	double theta = m_simulator.GetRobotTheta();// * 3.14/180;
+	double theta = m_simulator.GetRobotTheta();
 	
 	endPoint[0] = startPoint[0] + (m_simulator.GetRobotRadius() + 1) * cos(theta);
 	endPoint[1] = startPoint[1] + (m_simulator.GetRobotRadius() + 1) * sin(theta);
