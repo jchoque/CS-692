@@ -3,7 +3,11 @@
 #include "MyTimer.hpp"
 #include <cstring>
 #include <iostream>
+#include <sstream>
+#include <string>
 #include <math.h>
+#include <stdio.h>
+#include <unordered_map>
 
 using namespace std;
 
@@ -13,7 +17,7 @@ MotionPlanner::MotionPlanner(Simulator * const simulator)
 	shouldPickRand = false;
 	failCount = 0;
     m_simulator = simulator;   
-
+	
 	double oldX = m_simulator->GetRobotCenterX();
 	double oldY = m_simulator->GetRobotCenterY();
     Vertex *vinit = new Vertex();
@@ -58,7 +62,7 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 	//double stepSize = m_simulator->GetDistOneStep();
 	double stepSize = 0.1;
 	bool inObstacle = false;
-
+	Vertex *vertex;
 	double distance = 10000;
 	double stepVertex[Simulator::STATE_NR_DIMS];
 	stepVertex[Simulator::STATE_X] = m_vertices[vid]->m_state[Simulator::STATE_X];
@@ -68,7 +72,7 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 	stepVertex[Simulator::STATE_STEERING_VELOCITY] = m_vertices[vid]->m_state[Simulator::STATE_STEERING_VELOCITY];
 	int parent = vid;
 	int iters =0;
-	while (!inObstacle && distance >=stepSize && iters<100)
+	while (!inObstacle && distance >=stepSize && iters<1000)
 	{
 		iters++;
 		double deltaX = stepSize* stepVertex[Simulator::STATE_TRANS_VELOCITY]*cos(stepVertex[Simulator::STATE_ORIENTATION_IN_RADS]);
@@ -91,7 +95,7 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 			distance = calculateDistance(stepVertex, pSubGoal);
 
 
-			Vertex *vertex = new Vertex();
+			vertex = new Vertex();
 			for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
 			{
 				vertex->m_state[i] = stepVertex[i];
@@ -108,12 +112,20 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 			}
 			currentLocX = stepVertex[Simulator::STATE_X];
 			currentLocY = stepVertex[Simulator::STATE_Y];
-
-			if (m_simulator->HasRobotReachedGoal())
-			{
-				m_vidAtGoal = parent;
-				break;
+			
+			// Store this point in memory so we don't pick another point close 
+			// to it to build off of
+			int pointX = (int)vertex->m_state[Simulator::STATE_X];
+			int pointY = (int)vertex->m_state[Simulator::STATE_Y];
+			map <int,int> points;
+			unordered_map<int, map<int,int>>::const_iterator iter = m_endPoints.find(pointX);
+			if (iter != m_endPoints.end()){
+				points = iter->second;
 			}
+			std::pair<int, int> point (pointY, 0);
+			points.insert(point);
+			std::pair<int, map<int, int>> data (pointX, points);
+			m_endPoints.insert(data);		
 		}
 		else 
 		{
@@ -122,34 +134,43 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 			m_simulator->SetRobotCenter(currentLocX, currentLocY);
 		}
 	}
+	
 }
 
 void MotionPlanner::ExtendRRT(void)
 {
     Clock clk;
     StartTime(&clk);
-	double tooClose =  m_simulator->GetRobotRadius() * 2;
-	double tooFar =  tooClose * 10;
 	//1. Sample state
-	// Since sampling takes very little time we want to only sample vertices that are:
-	// a)  Unique points that are not very close to existing vertices because they
-	//     most likely won't provide any new paths
-	// b)  Points that are not very far from all other vertices because the 
-	//     probability of having to maneuver around multiple obstacles increases
-	//     and causes the computational time to increase
+	// Since sampling takes very little time we want to only sample vertices that are
+	// unique points that are not very close to existing vertices because they
+	// most likely won't provide any new paths
 	double * sampleState = new double[Simulator::STATE_NR_DIMS];
-	
-	bool validState = false;
-
-	while (!validState)
-	{
+	bool validState;
+//	cout << "Generating a new point" << endl;
+	do {
+		validState = true;
 		m_simulator->SampleState(sampleState);
-		m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
-		validState = m_simulator->IsValidState();
-	}
-	m_simulator->setLastSample(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
+	
+		int pointX = (int)sampleState[Simulator::STATE_X];
+		int pointY = (int)sampleState[Simulator::STATE_Y];
+	
+		unordered_map<int, map<int,int>>::const_iterator iter = m_endPoints.find(pointX);//pointX.str());
+		if (iter != m_endPoints.end()){
+			if (iter->second.find(pointY) != iter->second.end()){
+				cout << "Skipping point " << pointX << "," << pointY << endl;
+				validState = false;
+				break;
+			}
+		}
+		
+	} while (!validState);
+//	cout << "Found a valid point!" << endl;
 
-	if(validState)
+	//2. Check to see if the state is valid
+	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
+
+	if(m_simulator->IsValidState())
 	{
 		//3. Find the nearest configuration based on distance.
 		int vid = getClosestVid(sampleState);
@@ -247,7 +268,7 @@ void MotionPlanner::GetPathFromInitToGoal(std::vector<int> *path) const
    
     path->clear();
     for(int i = rpath.size() - 1; i >= 0; --i)
-		path->push_back(rpath[i]);
+	path->push_back(rpath[i]);
 }
 
 void MotionPlanner::ExtendRG_RRT(void)
@@ -257,18 +278,22 @@ void MotionPlanner::ExtendRG_RRT(void)
 
 	//1. Sample state
 	double * sampleState = new double[Simulator::STATE_NR_DIMS];
-	m_simulator->SampleState(sampleState);
+	bool validState = false;
+	while (!validState){
+		m_simulator->SampleState(sampleState);
+	
+		//2. Check to see if the state is valid
+		m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
+		validState = m_simulator->IsValidState();
+	}
 
-	//2. Check to see if the state is valid
-	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
-
-	if(m_simulator->IsValidState())
+	if(validState)
 	{
 		//3. Find the nearest configuration based on distance.
 		int vid = getClosestVid(sampleState);
 
 		//Now see if vid's children is closer
-		
+		  
 		int childrenIdx = -1;
 		double minDistance = calculateDistance(sampleState,m_vertices[vid]->m_state);
 		std::vector<ReachableObj *>children = m_vertices.at(vid)->mReachableObj;
@@ -313,7 +338,7 @@ void MotionPlanner::generateReachableState(int pParentIdx, Vertex *pParentVertex
 		double u = PseudoRandomUniformReal(Simulator::MIN_ACCELERATION, Simulator::MAX_ANGLE_ACCELERATION);
 		double v = PseudoRandomUniformReal(Simulator::MIN_ANGLE_ACCELERATION, Simulator::MAX_ANGLE_ACCELERATION);
 	
-		for(int iter=0;iter<100;iter++)
+		for(int iter=0;iter<1000;iter++)
 		{
 			double deltaX = deltat* tempObj[Simulator::STATE_TRANS_VELOCITY]*cos(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
 			double deltaY = deltat*tempObj[Simulator::STATE_TRANS_VELOCITY]*sin(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
