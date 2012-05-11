@@ -126,6 +126,22 @@ public:
 	m_circles[0] = x;
 	m_circles[1] = y;
     }
+
+	double getLastSampleX()
+	{
+		return 	m_samplePoint[0];
+	}
+	double getLastSampleY()
+	{
+		return m_samplePoint[1];
+	
+	}
+
+	void setLastSample(double x, double y)
+	{
+		m_samplePoint[0] = x;
+		m_samplePoint[1] = y;
+	}
     
     bool IsValidState(void) const;
   
@@ -152,6 +168,7 @@ public:
 
 protected:    
     std::vector<double> m_circles;
+	double  m_samplePoint[2];
 
     double              m_bbox[4];
 	double              m_state[STATE_NR_DIMS];

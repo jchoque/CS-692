@@ -1,12 +1,12 @@
 #include "Simulator.hpp"
 #include <cstring>
 
-double Simulator::MIN_VELOCITY = -10;
+double Simulator::MIN_VELOCITY = -5;
 double Simulator::MAX_VELOCITY = 10;
 double Simulator::MIN_ANGLE_VELOCITY = -M_PI/18;
 double Simulator::MAX_ANGLE_VELOCITY = M_PI/18;
 double Simulator::MIN_ACCELERATION = -5;
-double Simulator::MAX_ACCELERATION = 5;
+double Simulator::MAX_ACCELERATION = 10;
 double Simulator::MIN_ANGLE_ACCELERATION = -M_PI/36;
 double Simulator::MAX_ANGLE_ACCELERATION= M_PI/36;
 
@@ -20,7 +20,9 @@ Simulator::Simulator(void)
     m_circles.push_back(-15);
     m_circles.push_back(1.0);
 
-    m_distOneStep = 0.01;    
+    m_distOneStep = 0.01;
+	m_samplePoint[0] = -1;
+	m_samplePoint[1] = -1;
 }
 
 Simulator::~Simulator(void)

@@ -219,7 +219,7 @@ void Graphics::HandleEventOnDisplay(void)
     glVertex2d(bbox[2], bbox[3]);
     glVertex2d(bbox[0], bbox[3]);
     glEnd();
-    
+
 	//draw robot, goal, and obstacles
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     DrawPointer();
@@ -230,6 +230,8 @@ void Graphics::HandleEventOnDisplay(void)
 	{
 		DrawCircle2D(m_simulator.GetObstacleCenterX(i),m_simulator.GetObstacleCenterY(i),m_simulator.GetObstacleRadius(i));
 	}
+
+
 	//draw planner vertices
     if(m_drawPlannerVertices)
     {
@@ -254,9 +256,31 @@ void Graphics::HandleEventOnDisplay(void)
 		
     }
 
+	if(m_planner->IsProblemSolved())
+	{
+		glColor3f(1.0,0.0,0.0);
+		glPointSize(2.0);
+		glBegin(GL_LINES);
+		for(int i=0;i<m_path.size();i++)
+		{
+			double * state = (m_planner->m_vertices[m_path[i]]->m_state);
+			glVertex2dv(state);
+		}
+		glVertex2d(m_simulator.GetGoalCenterX(), m_simulator.GetGoalCenterY());
+
+		glEnd();
+	}
+
 	glColor3f(1, 0, 0);
 	DrawCircle2D(m_simulator.GetRobotCenterX(), m_simulator.GetRobotCenterY(), m_simulator.GetRobotRadius());
-
+	
+	double sampleX = m_simulator.getLastSampleX();
+	double sampleY = m_simulator.getLastSampleY();
+	if(!m_planner->IsProblemSolved() && sampleX != -1 && sampleY !=-1)
+	{
+		glColor3f(1.0,0.6,0.0);
+		DrawCircle2D(m_simulator.getLastSampleX(), m_simulator.getLastSampleY(),.5);
+	}
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_ALWAYS);
 	double startPoint[2];

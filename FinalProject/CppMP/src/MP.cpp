@@ -68,7 +68,7 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 	stepVertex[Simulator::STATE_STEERING_VELOCITY] = m_vertices[vid]->m_state[Simulator::STATE_STEERING_VELOCITY];
 	int parent = vid;
 	int iters =0;
-	while (!inObstacle && distance >=stepSize && iters<1000)
+	while (!inObstacle && distance >=stepSize && iters<100)
 	{
 		iters++;
 		double deltaX = stepSize* stepVertex[Simulator::STATE_TRANS_VELOCITY]*cos(stepVertex[Simulator::STATE_ORIENTATION_IN_RADS]);
@@ -90,11 +90,7 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 			
 			distance = calculateDistance(stepVertex, pSubGoal);
 
-			if (m_simulator->HasRobotReachedGoal())
-			{
-				m_vidAtGoal = vid;
-				break;
-			}
+
 			Vertex *vertex = new Vertex();
 			for(int i=0;i<Simulator::STATE_NR_DIMS;i++)
 			{
@@ -112,6 +108,12 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 			}
 			currentLocX = stepVertex[Simulator::STATE_X];
 			currentLocY = stepVertex[Simulator::STATE_Y];
+
+			if (m_simulator->HasRobotReachedGoal())
+			{
+				m_vidAtGoal = parent;
+				break;
+			}
 		}
 		else 
 		{
@@ -136,40 +138,18 @@ void MotionPlanner::ExtendRRT(void)
 	//     probability of having to maneuver around multiple obstacles increases
 	//     and causes the computational time to increase
 	double * sampleState = new double[Simulator::STATE_NR_DIMS];
-	m_simulator->SampleState(sampleState);
-	/*
-	bool newPoint;
-	do {
-		newPoint = true;
+	
+	bool validState = false;
+
+	while (!validState)
+	{
 		m_simulator->SampleState(sampleState);
+		m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
+		validState = m_simulator->IsValidState();
+	}
+	m_simulator->setLastSample(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
 
-		// Check all known vertices to see if this point is relatively close to an existing vertex
-		// or if the vertex is way too far away don't even try to add it
-		double minDist = DBL_MAX;
-		for (int idx = 0; idx < m_vertices.size() && newPoint; idx++){
-			double dist = sqrt(pow(sampleState[Simulator::STATE_X] - m_vertices[idx]->m_state[Simulator::STATE_X], 2) + 
-				pow(sampleState[Simulator::STATE_Y] - m_vertices[idx]->m_state[Simulator::STATE_Y], 2));
-			if (dist < tooClose){
-				newPoint = false;
-				break;
-			}
-			// Store the minimum distance to make sure this point isn't too far
-			// from all of the other points
-			else if (minDist > dist){
-				minDist = dist;
-			}
-			
-		}
-		// If this is a new point then make sure it isn't too far from all other points
-		if (newPoint && minDist > tooFar){
-			newPoint = false;
-		}
-	} while (!newPoint);  // While we haven't found a new point
-	*/
-	//2. Check to see if the state is valid
-	m_simulator->SetRobotCenter(sampleState[Simulator::STATE_X], sampleState[Simulator::STATE_Y]);
-
-	if(m_simulator->IsValidState())
+	if(validState)
 	{
 		//3. Find the nearest configuration based on distance.
 		int vid = getClosestVid(sampleState);
@@ -267,7 +247,7 @@ void MotionPlanner::GetPathFromInitToGoal(std::vector<int> *path) const
    
     path->clear();
     for(int i = rpath.size() - 1; i >= 0; --i)
-	path->push_back(rpath[i]);
+		path->push_back(rpath[i]);
 }
 
 void MotionPlanner::ExtendRG_RRT(void)
@@ -333,7 +313,7 @@ void MotionPlanner::generateReachableState(int pParentIdx, Vertex *pParentVertex
 		double u = PseudoRandomUniformReal(Simulator::MIN_ACCELERATION, Simulator::MAX_ANGLE_ACCELERATION);
 		double v = PseudoRandomUniformReal(Simulator::MIN_ANGLE_ACCELERATION, Simulator::MAX_ANGLE_ACCELERATION);
 	
-		for(int iter=0;iter<1000;iter++)
+		for(int iter=0;iter<100;iter++)
 		{
 			double deltaX = deltat* tempObj[Simulator::STATE_TRANS_VELOCITY]*cos(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
 			double deltaY = deltat*tempObj[Simulator::STATE_TRANS_VELOCITY]*sin(tempObj[Simulator::STATE_ORIENTATION_IN_RADS]);
