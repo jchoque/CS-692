@@ -125,7 +125,13 @@ void MotionPlanner::ExtendTree(const int vid,double u, double v, double pSubGoal
 			std::pair<int, int> point (pointY, 0);
 			points.insert(point);
 			std::pair<int, map<int, int>> data (pointX, points);
-			m_endPoints.insert(data);		
+			m_endPoints.insert(data);
+
+			if(m_simulator->HasRobotReachedGoal())
+			{
+				m_vidAtGoal = parent;
+				break;
+			}
 		}
 		else 
 		{
